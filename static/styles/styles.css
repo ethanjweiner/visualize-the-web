@@ -1,0 +1,72 @@
+@import url("https://fonts.googleapis.com/css2?family=Titillium+Web:wght@300&display=swap");
+
+* {
+  font-family: "Titillium Web", sans-serif;
+  color: white;
+}
+
+#map {
+  left: 300px;
+  width: 90%;
+  height: 100%;
+}
+html,
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+#controller {
+  position: fixed;
+  left: 0;
+  height: 100%;
+  width: 300px;
+  background: #a51c31;
+  border-right: 5px solid white;
+  z-index: 1;
+  overflow: scroll;
+}
+
+#controller::-webkit-scrollbar {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  #controller {
+    width: 100%;
+    height: 300px;
+    bottom: 0;
+  }
+  #map {
+    left: 0;
+    bottom: 300px;
+    height: fill;
+    width: 100%;
+  }
+}
+
+.form-control:focus {
+  outline: none !important;
+  box-shadow: 0 0 10px white;
+}
+
+form {
+  background: #9c4a56;
+}
+
+input[type="submit"] {
+  box-shadow: 0 0 20px white;
+}
+
+input[type="submit"]:hover {
+  background: rgb(219, 219, 219);
+}
+
+#db-ip {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  color: grey;
+  z-index: 100;
+}

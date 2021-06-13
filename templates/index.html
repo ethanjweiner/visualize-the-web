@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Visualize the Web</title>
+    <!-- Bootstrap -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-+0n0xVW2eSR5OomGNYDnhzAbDsOXxcvSN1TPprVMTNDbiYZCxYbOOl7+AMvyTG2x"
+      crossorigin="anonymous"
+    />
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="{{ url_for('static', filename='styles/styles.css') }}"
+    />
+    <!-- Determine the root path of our application -->
+    <script type=text/javascript>
+      $SCRIPT_ROOT = {{ request.script_root|tojson }};
+    </script>
+  </head>
+  <body>
+    <div id="controller">
+      <h1 class="text-center pt-3 d-none d-md-block">Web Visualizer</h1>
+      <hr class="d-none d-md-block" />
+      <p class="mx-2 mt-3 mt-md-0">
+        Use the form below to simulate an HTTP request:
+      </p>
+      <form action="/" method="GET" class="mx-2 p-2 rounded" id="request-form">
+        <label for="request-url" class="form-label">Request URL</label>
+        <input
+          type="text"
+          id="request-url"
+          name="request-url"
+          class="form-control"
+          style="font-family: arial; font-size: 14px"
+          value="{% if url %}{{url}}{% else %}https://{% endif %}"
+        />
+        <label class="form-label mt-2" for="request-action">Action</label>
+        <div class="form-check">
+          <input
+            type="radio"
+            class="form-check-input"
+            name="method-radios"
+            id="get-radio"
+            value="GET"
+            checked
+          />
+          <label for="get-radio" class="form-check-label">GET</label>
+        </div>
+        <div class="form-check">
+          <input
+            type="radio"
+            class="form-check-input"
+            name="method-radios"
+            value="POST"
+            id="post-radio"
+          />
+          <label for="post-radio" class="form-check-label">POST</label>
+        </div>
+        <div id="request-content" class="d-none">
+          <label for="request-content" class="form-label mt-2"
+            >JSON Content</label
+          >
+          <textarea
+            name="request-content"
+            rows="6"
+            class="form-control"
+            style="font-family: arial; font-size: 14px"
+          ></textarea>
+        </div>
+        <div class="d-grid">
+          <input
+            type="submit"
+            class="btn btn-light mt-3"
+            value="Send Request"
+          />
+        </div>
+      </form>
+    </div>
+
+    <div id="map">
+      <!-- Replace with a loading screen -->
+      <h1 style="color: black" class="mx-auto text-center py-5">
+        Loading map....
+      </h1>
+    </div>
+
+    <a href='https://db-ip.com' id="db-ip">IP Geolocation by DB-IP</a>
+
+    <!-- Load bundled javascript -->
+    {% assets "js_all" %}
+    <script
+      type="text/javascript"
+      src="{{ url_for('static', filename='bundle.js') }}"
+    ></script>
+    {% endassets %}
+
+    <script
+      async
+      defer
+      src="https://maps.googleapis.com/maps/api/js?key={{key}}&callback=initMap"
+    ></script>
+  </body>
+</html>

@@ -1,0 +1,6 @@
+**/node_modules
+**/.vscode
+**/venv
+**/.webassets-cache
+**/static/bundle.js
+**/data
