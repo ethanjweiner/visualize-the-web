@@ -4,3 +4,4 @@
 **/.webassets-cache
 **/static/bundle.js
 **/data
+**/__pychache__
