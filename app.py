@@ -1,6 +1,8 @@
 import os
 import jsmin
 import csv
+import random
+import itertools
 from flask import Flask, jsonify, request, render_template
 from flask_assets import Environment, Bundle
 
@@ -25,12 +27,13 @@ assets.register('js_all', js)
 
 # CONSTANTS
 KEY = "AIzaSyCCl7-ieDSLRydryyQ1JaypI_dKuBhqfOc"
-TOTAL_IP_ADDRESSES = 60000
-
+TOTAL_IP_ADDRESSES = 6068377
 
 # ROUTES
 
 # Index: Displays a static map on load
+
+
 @app.route("/")
 def index():
     return render_template("index.html", key=KEY)
@@ -42,15 +45,16 @@ def routers():
     # 1. Clear routers.db
 
     # 2. Update routers.db with new coordinates
-
     num_routers = int(request.args.get("num_routers"))
 
     with open('data/ip_addresses.csv') as ip_addresses:
         ip_addresses_reader = csv.DictReader(ip_addresses)
-        rows = list(ip_addresses_reader)
+
         for i in range(0, num_routers):
-            print(i)
-            # Retrieve a random IPCoordinate from the database
+            # Generate a random # to select from all the routers
+            router_index = random.randint(0, TOTAL_IP_ADDRESSES - 1)
+            print(router_index)
+            print(next(itertools.islice(ip_addresses_reader, router_index, None)))
             # Store this coordinate in routers.db
 
     return jsonify("Routers")
