@@ -1,6 +1,10 @@
 ---
 name: Bug report
 about: Create a report to help us improve
+title: ''
+labels: enhancement
+assignees: Ethanweiner20
+
 ---
 
 <!-- Please search existing issues to avoid creating duplicates. -->
