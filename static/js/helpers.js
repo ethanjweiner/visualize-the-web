@@ -40,14 +40,15 @@ function updateRouters(map, num_routers) {
   $.getJSON(
     $SCRIPT_ROOT + "/routers",
     { num_routers },
-    function (routerCoordinates) {
-      displayRouters(map, routerCoordinates);
+    function (routers) {
+      console.log(routers);
+      displayRouters(map, routers);
     }
   );
 }
 
-// displayRouters : [Google Maps Map] [List-of Coordinates] -> _
+// displayRouters : [Google Maps Map] [List-of Routers] -> _
 // Superimposes router icons on _map_ at the locations specified by _coordinates_
-function displayRouters(map, coordinates) {
+function displayRouters(map, routers) {
   // Display
 }
