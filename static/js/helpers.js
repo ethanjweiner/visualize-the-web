@@ -41,7 +41,6 @@ function updateRouters(map, num_routers) {
     $SCRIPT_ROOT + "/routers",
     { num_routers },
     function (routers) {
-      console.log(routers);
       displayRouters(map, routers);
     }
   );
@@ -50,5 +49,22 @@ function updateRouters(map, num_routers) {
 // displayRouters : [Google Maps Map] [List-of Routers] -> _
 // Superimposes router icons on _map_ at the locations specified by _coordinates_
 function displayRouters(map, routers) {
-  // Display
+  const routerMarkerImage = new google.maps.MarkerImage(
+    icons["router"].icon,
+    new google.maps.Size(20,20),
+    null,
+    null,
+    new google.maps.Size(20,20)
+  );
+
+  routers.forEach(router => {
+    // Create a Google Maps Coordinate for that router
+    const coordinate = new google.maps.LatLng(router.latitude, router.longitude)
+    // Display a marker at that coordinate
+    new google.maps.Marker({
+      position: coordinate,
+      map: map,
+      icon: routerMarkerImage
+    })
+  });
 }
