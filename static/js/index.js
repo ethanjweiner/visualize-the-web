@@ -6,6 +6,7 @@ const icons = {
     icon: "static/images/home-2.png",
   },
 };
+const INITIAL_NUM_ROUTERS = 1000;
 
 // Determines whether to call animateMap()
 const isAnimated =
@@ -57,7 +58,7 @@ function initMap() {
 }
 
 // ROUTERS
-updateRouters(map, 10);
+updateRouters(map, INITIAL_NUM_ROUTERS);
 // 1000 is an arbitrary number
 // updateRouters(map, 1000);
 
