@@ -1,12 +1,14 @@
 // Constants
 const ZOOM = 3;
-const iconBase = "http://maps.google.com/mapfiles/kml/shapes/";
 const icons = {
   home: {
     icon: "static/images/home-2.png",
   },
+  router: {
+    icon: "static/images/wi-fi-2.png"
+  }
 };
-const INITIAL_NUM_ROUTERS = 1000;
+const INITIAL_NUM_ROUTERS = 2000;
 
 // Determines whether to call animateMap()
 const isAnimated =
@@ -45,7 +47,8 @@ function initMap() {
         });
 
         loadCables(map);
-        displayRouters(map);
+        // LOAD AND DISPLAY ROUTERS
+        updateRouters(map, INITIAL_NUM_ROUTERS);
       },
       () => {
         handleLocationError(true, infoWindow, map.getCenter());
@@ -57,10 +60,7 @@ function initMap() {
   }
 }
 
-// ROUTERS
-updateRouters(map, INITIAL_NUM_ROUTERS);
-// 1000 is an arbitrary number
-// updateRouters(map, 1000);
+
 
 // ANIMATION
 $("#request-form").bind("submit", function (e) {

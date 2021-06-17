@@ -23,7 +23,7 @@ assets.register('js_all', js)
 # CONSTANTS
 KEY = "AIzaSyCCl7-ieDSLRydryyQ1JaypI_dKuBhqfOc"
 DATABASE_PATH = './data/ip_addresses.sqlite3'
-
+OCEANIC_ROUTERS = []
 
 # ROUTES
 
@@ -39,10 +39,13 @@ def index():
 def routers():
     # Randomly select ip addresses from table to represent the routers
     num_routers = request.args.get("num_routers")
+
     routers = []
 
     for ip in query_db('SELECT * FROM ip_addresses ORDER BY RANDOM() LIMIT ' + num_routers, one=False):
         routers.append(ip)
+
+    routers = routers + OCEANIC_ROUTERS
 
     return jsonify(routers)
 
