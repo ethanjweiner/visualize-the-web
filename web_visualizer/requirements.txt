@@ -1,2 +1,4 @@
 ipinfo==4.2.0
 flask==2.0.1
+jsmin==2.2.2
+
