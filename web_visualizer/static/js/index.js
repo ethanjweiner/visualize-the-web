@@ -8,7 +8,7 @@ const icons = {
     icon: "static/images/wi-fi-2.png"
   }
 };
-const INITIAL_NUM_ROUTERS = 2000;
+const INITIAL_NUM_ROUTERS = 5000;
 
 // Determines whether to call animateMap()
 const isAnimated =
