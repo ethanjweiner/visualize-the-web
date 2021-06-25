@@ -3,7 +3,7 @@
 // - Turn off gesture handling and zoom control
 // - Run the animation
 
-function animateMap(map, userMarker, requestData, responseData) {
+function animateMap(map, userMarker, requestRoutes, responseRoutes, data) {
   console.log(requestData, responseData);
 
   // Turn off gesture handling and zoom control

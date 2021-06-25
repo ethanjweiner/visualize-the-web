@@ -79,8 +79,8 @@ $("#request-form").bind("submit", function (e) {
   e.preventDefault();
   // Run the request in "/animate", and retrieve the details needed to animate
   request_method = $("#get-radio").attr("checked") == "true" ? "GET" : "POST";
-  console.log($());
-  const requestData = {
+
+  const request_data = {
     request_url: $('input[name="request-url"]').val(),
     request_method,
     request_content: $('textarea[name="request-content"]').val(),
@@ -88,11 +88,11 @@ $("#request-form").bind("submit", function (e) {
   };
 
   $.getJSON(
-    $SCRIPT_ROOT + "/animate",
-    { request_data: requestData },
-    function (responseData) {
-      console.log("Response Data: ", responseData);
-      animateMap(map, userMarker, requestData, responseData);
+    $SCRIPT_ROOT + "/routes",
+    request_data,
+    function (animationData) {
+      console.log("Animation Data: ", animationData);
+      // animateMap(map, userMarker, requestRoutes, responseRoutes, data)
     }
   );
   return false;
