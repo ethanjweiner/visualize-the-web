@@ -11,13 +11,11 @@ function initMap() {
     // Pan and mark user's location on load
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        const center = {
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
-        };
+        userPosition.lat = position.coords.latitude;
+        userPosition.lng = position.coords.longitude;
 
         map = new google.maps.Map(document.getElementById("map"), {
-          center,
+          center: userPosition,
           zoom: ZOOM,
           gestureHandling: "greedy",
           zoomControl: true,
@@ -28,15 +26,22 @@ function initMap() {
 
         // Create a home marker at the user's location
         userMarker = new google.maps.Marker({
-          position: center,
+          position: userPosition,
           map,
           icon: icons["home"].icon,
           title: "User location",
         });
 
+        // Load and display cables/routers
         loadCables(map);
-        // LOAD AND DISPLAY ROUTERS
         updateRouters(map, INITIAL_NUM_ROUTERS);
+
+        map.addListener('mousemove', (mapsMouseEvent) => {
+          document.querySelector("#coordinates").innerHTML = `
+            Latitude: ${mapsMouseEvent.latLng.toJSON().lat}<br>
+            Longitude: ${mapsMouseEvent.latLng.toJSON().lng}
+          `;
+        })
       },
       () => {
         handleLocationError(true, infoWindow, map.getCenter());
@@ -57,6 +62,15 @@ function initMap() {
       updateRouters(map, num_routers)
     })
 
+        // Add event listeners
+    // Update the # of routers upon sliding
+    document.querySelector("#num-packets").addEventListener('input', (e) => {
+      // Multiply the slider value by 100
+      let num_packets = e.target.value;
+      // Update the output element
+      document.querySelector("#num-packets-output").value = num_packets;
+    });
+
   // Browser doesn't supoprt geolocation
   } else {
     handleLocationError(false, infoWindow, map.getCenter());
@@ -70,19 +84,22 @@ $("#request-form").bind("submit", function (e) {
   e.preventDefault();
   // Run the request in "/animate", and retrieve the details needed to animate
   request_method = $("#get-radio").attr("checked") == "true" ? "GET" : "POST";
-  console.log($());
-  const requestData = {
+
+  const request_data = {
     request_url: $('input[name="request-url"]').val(),
     request_method,
     request_content: $('textarea[name="request-content"]').val(),
+    latitude: userPosition.lat,
+    longitude: userPosition.lng,
+    num_packets: $('input#num-packets').val()
   };
 
   $.getJSON(
-    $SCRIPT_ROOT + "/animate",
-    { request_data: requestData },
-    function (responseData) {
-      console.log("Response Data: ", responseData);
-      animateMap(map, userMarker, requestData, responseData);
+    $SCRIPT_ROOT + "/routes",
+    request_data,
+    function (animationData) {
+      console.log("Animation Data: ", animationData);
+      // animateMap(map, userMarker, requestRoutes, responseRoutes, data)
     }
   );
   return false;

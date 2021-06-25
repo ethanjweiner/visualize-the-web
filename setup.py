@@ -8,6 +8,8 @@ setup(
         'flask',
         'jsmin',
         'ipinfo',
-        'flask_assets'
+        'flask_assets',
+        'ipinfo',
+        'requests'
     ]
 )
