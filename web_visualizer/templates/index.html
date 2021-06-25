@@ -22,7 +22,7 @@
     </script>
   </head>
   <body>
-    <div id="controller">
+    <div id="controller" class="mb-5">
       <h1 class="text-center pt-3 d-none d-md-block">Web Visualizer</h1>
       <hr class="d-none d-md-block" />
       <p class="mx-2 mt-3 mt-md-0">
@@ -79,6 +79,15 @@
           />
         </div>
       </form>
+      <hr class="d-none d-md-block" />
+      <div id="options">
+        <h4 class="text-center">Options</h4>
+        <form class="mx-2 p-2 rounded">
+          <label for="num-routers" class="form-label">Number of Routers</label>
+          <input type="range" class="form-range" id="num-routers" value="25" min="5">
+          <output for="num-routers" id="num-routers-output">2500</output>
+        </form>
+      </div>
     </div>
 
     <div id="map"> 
