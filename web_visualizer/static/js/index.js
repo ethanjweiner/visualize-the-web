@@ -57,6 +57,15 @@ function initMap() {
       updateRouters(map, num_routers)
     })
 
+        // Add event listeners
+    // Update the # of routers upon sliding
+    document.querySelector("#num-packets").addEventListener('input', (e) => {
+      // Multiply the slider value by 100
+      let num_packets = e.target.value;
+      // Update the output element
+      document.querySelector("#num-packets-output").value = num_packets;
+    });
+
   // Browser doesn't supoprt geolocation
   } else {
     handleLocationError(false, infoWindow, map.getCenter());
@@ -75,6 +84,7 @@ $("#request-form").bind("submit", function (e) {
     request_url: $('input[name="request-url"]').val(),
     request_method,
     request_content: $('textarea[name="request-content"]').val(),
+    num_packets: $('input#num-packets').val()
   };
 
   $.getJSON(
