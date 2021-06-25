@@ -17,4 +17,4 @@ const INITIAL_NUM_ROUTERS = 2500;
 var oceanicCables =
   "https://raw.githubusercontent.com/telegeography/www.submarinecablemap.com/master/public/api/v2/cable/cable-geo.json";
 var ROUTER_MARKERS = []
-
+const userPosition = {}
