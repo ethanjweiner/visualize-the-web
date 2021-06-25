@@ -10,3 +10,8 @@ def animate():
 
     # Provide the response data to the template
     return jsonify("animate")
+
+# generate_path
+# Determines the path that a packet will travel, using the routers
+def generate_path():
+    return None

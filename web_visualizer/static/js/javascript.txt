@@ -12,3 +12,6 @@ Static JS files produce as output:
 --- Packets being sent down a few routes (using fiber optic cables)
 --- Destination location
 - A "response" animation that displays roughly the same thing in reverse
+
+The actual storage of the routers/landing points, & the routing function itself,
+will be a backend process, whereas the animation of this process will be frontend.
