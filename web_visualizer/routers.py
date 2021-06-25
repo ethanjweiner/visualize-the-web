@@ -83,11 +83,10 @@ def routers():
     # Randomly select ip addresses from table to represent the routers
     num_routers = request.args.get("num_routers")
 
-    # ROUTERS = router_points(num_routers)
+    ROUTERS = router_points(num_routers)
     LANDING_POINTS = landing_points()
 
     points = ROUTERS + LANDING_POINTS
-    print(points)
 
     return jsonify(points)
 

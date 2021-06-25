@@ -1,15 +1,3 @@
-// Constants
-const ZOOM = 3;
-const icons = {
-  home: {
-    icon: "static/images/home-2.png",
-  },
-  router: {
-    icon: "static/images/wi-fi-2.png"
-  }
-};
-const INITIAL_NUM_ROUTERS = 5000;
-
 // Determines whether to call animateMap()
 const isAnimated =
   document.currentScript.getAttribute("animation") === "on" ? true : false;
@@ -54,7 +42,22 @@ function initMap() {
         handleLocationError(true, infoWindow, map.getCenter());
       }
     );
-    // Browser doesn't supoprt geolocation
+    // Add event listeners
+    // Update the # of routers upon sliding
+    document.querySelector("#num-routers").addEventListener('input', (e) => {
+      // Multiply the slider value by 100
+      let num_routers = e.target.value * 100;
+      // Update the output element
+      document.querySelector("#num-routers-output").value = num_routers;
+    });
+
+    document.querySelector("#num-routers").addEventListener('mouseup', (e) => {
+      let num_routers = e.target.value * 100;
+      deleteRouterMarkers();
+      updateRouters(map, num_routers)
+    })
+
+  // Browser doesn't supoprt geolocation
   } else {
     handleLocationError(false, infoWindow, map.getCenter());
   }
