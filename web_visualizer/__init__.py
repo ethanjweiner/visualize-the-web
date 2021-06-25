@@ -13,9 +13,8 @@ from flask_assets import Environment, Bundle
 app = Flask(__name__)
 assets = Environment(app)
 
-
-import web_visualizer.animate
 import web_visualizer.routers
+import web_visualizer.routes
 
 
 # Bundle javascript files into minified "bundle.js"

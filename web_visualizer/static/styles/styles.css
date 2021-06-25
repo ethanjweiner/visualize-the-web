@@ -70,3 +70,11 @@ input[type="submit"]:hover {
   color: grey;
   z-index: 100;
 }
+
+#coordinates {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  color: white;
+  z-index: 100;
+}
