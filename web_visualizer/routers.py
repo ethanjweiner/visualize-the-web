@@ -31,7 +31,7 @@ class Router():
     # Determine a route from _self_ to _destination_, such that the next router is closer to the destination
     # ACCUMULATOR: The _path_ generated so far in the routing process
     # TERMINATION: On each recursion, the current router in the path must be closer to _destination_ than the previous
-    def route(self, destination, path):
+    def route(self, destination, path=[]):
         # Base case: The destination has been reached
         if self.latitude == destination.latidue and self.longitude == self.latitude:
             return path
@@ -62,7 +62,7 @@ class LandingPoint(Router):
     # Determine a route from _self_ to _destination_, such that the next router is closer to the destination
     # ACCUMULATOR: The _path_ generated so far in the routing process
     # TERMINATION: On each recursion, the current router in the path must be closer to _destination_ than the previous
-    def route(self, destination, path):
+    def route(self, destination, path=[]):
         # Base case: The destination has been reached
         if self.latitude == destination.latidue and self.longitude == self.latitude:
             return path
