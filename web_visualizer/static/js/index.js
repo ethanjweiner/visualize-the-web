@@ -11,13 +11,11 @@ function initMap() {
     // Pan and mark user's location on load
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        const center = {
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
-        };
+        userPosition.lat = position.coords.latitude;
+        userPosition.lng = position.coords.longitude;
 
         map = new google.maps.Map(document.getElementById("map"), {
-          center,
+          center: userPosition,
           zoom: ZOOM,
           gestureHandling: "greedy",
           zoomControl: true,
@@ -28,15 +26,22 @@ function initMap() {
 
         // Create a home marker at the user's location
         userMarker = new google.maps.Marker({
-          position: center,
+          position: userPosition,
           map,
           icon: icons["home"].icon,
           title: "User location",
         });
 
+        // Load and display cables/routers
         loadCables(map);
-        // LOAD AND DISPLAY ROUTERS
         updateRouters(map, INITIAL_NUM_ROUTERS);
+
+        map.addListener('mousemove', (mapsMouseEvent) => {
+          document.querySelector("#coordinates").innerHTML = `
+            Latitude: ${mapsMouseEvent.latLng.toJSON().lat}<br>
+            Longitude: ${mapsMouseEvent.latLng.toJSON().lng}
+          `;
+        })
       },
       () => {
         handleLocationError(true, infoWindow, map.getCenter());
@@ -84,6 +89,8 @@ $("#request-form").bind("submit", function (e) {
     request_url: $('input[name="request-url"]').val(),
     request_method,
     request_content: $('textarea[name="request-content"]').val(),
+    latitude: userPosition.lat,
+    longitude: userPosition.lng,
     num_packets: $('input#num-packets').val()
   };
 
