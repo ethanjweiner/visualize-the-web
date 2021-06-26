@@ -5,15 +5,13 @@ import urllib.request
 import json
 from flask import jsonify, request, g
 from web_visualizer.classes import Router, LandingPoint
-import csv
+from web_visualizer.store import *
 
 # Constants
 
 
 DATABASE_PATH = './web_visualizer/data/ip_addresses.sqlite3'
 LANDING_POINTS_DATA = './web_visualizer/data/landing_points.json'
-ROUTERS = []
-LANDING_POINTS = []
 
 # Data Definitions
 
