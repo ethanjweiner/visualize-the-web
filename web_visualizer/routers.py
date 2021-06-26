@@ -5,6 +5,7 @@ import urllib.request
 import json
 from flask import jsonify, request, g
 from web_visualizer.classes import Router, LandingPoint
+import csv
 
 # Constants
 
@@ -64,8 +65,9 @@ def query_db(query, args=(), one=False):
 def router_points(num_routers):
     routers = []
 
+    # Change to insert num_routers as argument instead (to avoid database manipulation)
     for ip in query_db('SELECT * FROM ip_addresses ORDER BY RANDOM() LIMIT ' + num_routers, one=False):
-        routers.append(Router(ip["latitude"], ip["longitude"], ip["ip"]).jsonify())
+        routers.append(Router(ip["latitude"], ip["longitude"], ip["continent_id"], ip["ip"]).jsonify())
     
     return routers
 
