@@ -4,7 +4,6 @@ import itertools
 from flask import Flask, request, render_template, g
 from flask_assets import Environment, Bundle
 
-
 # IP-related imports:
 # import socket
 # import ipinfo
