@@ -1,72 +1,51 @@
 from web_visualizer import app
-import sqlite3
 import random
 import urllib.request
 import json
 from flask import jsonify, request, g
 from web_visualizer.classes import Router, LandingPoint
-from web_visualizer.store import *
+from web_visualizer.database import Database
 
 # Constants
 
 
-DATABASE_PATH = './web_visualizer/data/ip_addresses.sqlite3'
+IP_ADDRESSES_PATH = './web_visualizer/data/ip_addresses.sqlite3'
+POINTS_PATH = './web_visualizer/data/points.sqlite3'
 LANDING_POINTS_DATA = './web_visualizer/data/landing_points.json'
 
 # Data Definitions
 
 # Routers: Generates GeoJSON locations of _num_routers_ routers
+
+
 @app.route("/routers")
 def routers():
     # Randomly select ip addresses from table to represent the routers
     num_routers = request.args.get("num_routers")
 
-    ROUTERS = router_points(num_routers)
-    LANDING_POINTS = landing_points()
+    routers = router_points(num_routers)
+    points = landing_points()
 
-    points = ROUTERS + LANDING_POINTS
+    store_points(routers, points)
 
-    return jsonify(points)
-
-
-# DATABASE HELPERS
-
-# get_db
-# Retrieves ip address database for usage
-def get_db():
-    db = getattr(g, '_database', None)
-    if db is None:
-        db = g._database = sqlite3.connect(DATABASE_PATH)
-        db.row_factory = dict_factory
-    return db
-
-
-# dict_factory
-# Converts the given _row_ from the to a dictionary
-def dict_factory(cursor, row):
-    d = {}
-    for idx, col in enumerate(cursor.description):
-        d[col[0]] = row[idx]
-    return d
-
-
-# query_db
-# Once created, queries the ip address database
-def query_db(query, args=(), one=False):
-    cur = get_db().execute(query, args)
-    rv = cur.fetchall()
-    cur.close()
-    return (rv[0] if rv else None) if one else rv
+    # Provide a jsonified version for the client to render
+    return jsonify(list(map(lambda point: point.__dict__, routers+points)))
 
 # router_points : Number -> [List-of Router]
 # Uses the ip_addresses database to generate a list of Routers, of size _num_routers_
+
+
 def router_points(num_routers):
+
+    ip_addresses_db = Database(IP_ADDRESSES_PATH)
     routers = []
 
     # Change to insert num_routers as argument instead (to avoid database manipulation)
-    for ip in query_db('SELECT * FROM ip_addresses ORDER BY RANDOM() LIMIT ' + num_routers, one=False):
-        routers.append(Router(ip["latitude"], ip["longitude"], ip["continent_id"], ip["ip"]).jsonify())
-    
+    for ip in ip_addresses_db.query_db('SELECT * FROM ip_addresses ORDER BY RANDOM() LIMIT ?',
+                                       [num_routers]):
+        routers.append(
+            Router(ip["ip"], ip["latitude"], ip["longitude"],
+                   continent_code=ip["continent_id"]))
     return routers
 
 
@@ -80,14 +59,42 @@ def landing_points():
     landing_points = []
 
     for landing_point in landing_points_data["features"]:
-        landing_points.append(LandingPoint(landing_point["geometry"]["coordinates"][1], landing_point["geometry"]["coordinates"][0], landing_point["properties"]["id"]).jsonify())
+        latitude = landing_point["geometry"]["coordinates"][1]
+        longitude = landing_point["geometry"]["coordinates"][0]
+        landing_points.append(LandingPoint(
+            latitude, longitude, landing_point["properties"]["id"]))
 
     # Temporary solution: Just return the landing points themselves, without cable data
     return landing_points
 
 
-# Distance: Node Node -> Number
-# Determine the distance from _p1_ to _p2_
-# Research how to determine distance w/ latitude & longitude (just the hypotenuse of pythagorean theorem?)
-def distance(p1, p2):
-    return 0
+# get_continent : Number Number -> String
+# Retrieves the continent code associated with the continent in which [_latitude_, _longitude_] is located
+def get_continent(latitude, longitude):
+    return 'Continent'
+
+
+# store_points : [List-of Router] [List-of LandingPoint] -> _
+# Stores the points in sqlite3 database for later access
+def store_points(routers, landing_points):
+    # Initialize databases
+    points_db = Database(POINTS_PATH)
+    cursor = points_db.db.cursor()
+
+    # Clear the database
+    points_db.clear('routers')
+    points_db.clear('landing_points')
+
+    # Insert into the database
+    for router in routers:
+        # Begin and end a trasncation for efficiency
+        cursor.execute("BEGIN")
+        points_db.query_db('INSERT INTO routers (ip, latitude, longitude, continent_code) VALUES (?,?,?,?)', [
+            router.ip, router.latitude, router.longitude, router.continent_code])
+        cursor.execute("COMMIT")
+    for landing_point in landing_points:
+        # Begin and end a trasncation for efficiency
+        cursor.execute("BEGIN")
+        points_db.query_db('INSERT INTO landing_points (latitude, longitude, continent_code, point_id) VALUES (?,?,?,?)', [
+            landing_point.latitude, landing_point.longitude, landing_point.continent_code, landing_point.point_id])
+        cursor.execute("COMMIT")

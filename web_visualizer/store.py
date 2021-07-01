@@ -1,2 +1,0 @@
-ROUTERS = []
-LANDING_POINTS = []
