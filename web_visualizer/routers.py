@@ -3,14 +3,14 @@ import random
 import urllib.request
 import json
 from flask import jsonify, request, g
-from web_visualizer.classes import Router, LandingPoint
+from web_visualizer.classes import Router, LandingPoint, Point
 from web_visualizer.database import Database
+from web_visualizer import db
 
 # Constants
 
 
 IP_ADDRESSES_PATH = './web_visualizer/data/ip_addresses.sqlite3'
-POINTS_PATH = './web_visualizer/data/points.sqlite3'
 LANDING_POINTS_DATA = './web_visualizer/data/landing_points.json'
 
 # Data Definitions
@@ -29,14 +29,13 @@ def routers():
     store_points(routers, points)
 
     # Provide a jsonified version for the client to render
-    return jsonify(list(map(lambda point: point.__dict__, routers+points)))
+    return jsonify(list(map(lambda point: point.toJson(), routers+points)))
 
 # router_points : Number -> [List-of Router]
 # Uses the ip_addresses database to generate a list of Routers, of size _num_routers_
 
 
 def router_points(num_routers):
-
     ip_addresses_db = Database(IP_ADDRESSES_PATH)
     routers = []
 
@@ -44,7 +43,7 @@ def router_points(num_routers):
     for ip in ip_addresses_db.query_db('SELECT * FROM ip_addresses ORDER BY RANDOM() LIMIT ?',
                                        [num_routers]):
         routers.append(
-            Router(ip["ip"], ip["latitude"], ip["longitude"],
+            Router(ip=ip["ip"], latitude=ip["latitude"], longitude=ip["longitude"],
                    continent_code=ip["continent_id"]))
     return routers
 
@@ -62,7 +61,7 @@ def landing_points():
         latitude = landing_point["geometry"]["coordinates"][1]
         longitude = landing_point["geometry"]["coordinates"][0]
         landing_points.append(LandingPoint(
-            latitude, longitude, landing_point["properties"]["id"]))
+            point_id=landing_point["properties"]["id"], latitude=latitude, longitude=longitude, continent_code=None))
 
     # Temporary solution: Just return the landing points themselves, without cable data
     return landing_points
@@ -76,25 +75,15 @@ def get_continent(latitude, longitude):
 
 # store_points : [List-of Router] [List-of LandingPoint] -> _
 # Stores the points in sqlite3 database for later access
+# EFFICIENCY: FAST
 def store_points(routers, landing_points):
-    # Initialize databases
-    points_db = Database(POINTS_PATH)
-    cursor = points_db.db.cursor()
-
-    # Clear the database
-    points_db.clear('routers')
-    points_db.clear('landing_points')
-
-    # Insert into the database
+    if Point.query.first() != None:
+        Point.query.delete()
+    Point.query.delete()
     for router in routers:
-        # Begin and end a trasncation for efficiency
-        cursor.execute("BEGIN")
-        points_db.query_db('INSERT INTO routers (ip, latitude, longitude, continent_code) VALUES (?,?,?,?)', [
-            router.ip, router.latitude, router.longitude, router.continent_code])
-        cursor.execute("COMMIT")
-    for landing_point in landing_points:
-        # Begin and end a trasncation for efficiency
-        cursor.execute("BEGIN")
-        points_db.query_db('INSERT INTO landing_points (latitude, longitude, continent_code, point_id) VALUES (?,?,?,?)', [
-            landing_point.latitude, landing_point.longitude, landing_point.continent_code, landing_point.point_id])
-        cursor.execute("COMMIT")
+        db.session.add(router)
+    if LandingPoint.query.first() == None:
+        for landing_point in landing_points:
+            db.session.add(landing_point)
+    # Commit after all insertions after finished
+    db.session.commit()

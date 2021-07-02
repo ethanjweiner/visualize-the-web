@@ -6,10 +6,8 @@ from web_visualizer.classes import Router, LandingPoint
 import requests
 from urllib.parse import urlparse
 from web_visualizer.helpers import *
-from web_visualizer.database import Database
 
 IP_INFO_ACCESS_TOKEN = '798b7b7ebf8444'
-POINTS_PATH = './web_visualizer/data/points.sqlite3'
 
 
 @app.route("/routes")
@@ -95,9 +93,6 @@ def simulate_http_request(request_url, request_method, request_content=None):
 def generate_routes(origin, destination, num_routes):
 
     routes = []
-
-    points_db = Database(POINTS_PATH)
-    routers =
 
     for i in range(num_routes):
         routes.append(origin.route(destination, routers))
