@@ -4,7 +4,6 @@
 // - Run the animation
 
 function animateMap(map, userMarker, serverRouter, requestRoutes, responseRoutes, data) {
-  console.log(requestData, responseData);
 
   // Turn off gesture handling and zoom control
   map.set("gestureHandling", "none");

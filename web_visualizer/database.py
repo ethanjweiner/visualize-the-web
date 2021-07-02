@@ -8,7 +8,7 @@ class Database():
         self.db = self.get_db()
 
     def get_db(self):
-        db = getattr(g, 'db_'+self.path, None)
+        db = getattr(g, '_database', None)
         if db is None:
             db = g._database = sqlite3.connect(self.path, isolation_level=None)
             db.row_factory = self.dict_factory

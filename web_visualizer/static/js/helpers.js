@@ -50,15 +50,6 @@ function updateRouters(map, num_routers) {
 // Superimposes router icons on _map_ at the locations specified by _coordinates_
 function displayRouters(map, routers) {
 
-  routers.forEach(router => {
-    displayRouter(map, router);
-  });
-}
-
-// displayRouter : [Google Maps Map] Router -> _
-// Displays a singular _router_ on the map, whose icon is dependent on the type of router
-function displayRouter(map, router) {
-
   const routerMarkerImage = new google.maps.MarkerImage(
     icons["router"].icon,
     new google.maps.Size(20,20),
@@ -75,13 +66,24 @@ function displayRouter(map, router) {
     new google.maps.Size(20,20)
   );
 
+
+  routers.forEach(router => {
+    let image = router.type == 'router' ? routerMarkerImage : landingPointMarkerImage;
+    displayRouter(map, router, image);
+  });
+
+}
+
+// displayRouter : [Google Maps Map] Router Image -> _
+// Displays a singular _router_ on the map, whose icon is dependent on the type of router
+function displayRouter(map, router, icon) {
     // Create a Google Maps Coordinate for that router
     const coordinate = new google.maps.LatLng(router.latitude, router.longitude)
     // Display a marker at that coordinate
     ROUTER_MARKERS.push(new google.maps.Marker({
       position: coordinate,
-      map: map,
-      icon: router.point_id ? landingPointMarkerImage : routerMarkerImage
+      map,
+      icon
     }));
 }
 
