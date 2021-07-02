@@ -34,10 +34,10 @@ def routes():
     # Create routers for the client & server to be able to route from
     # Retrieve location information using geolocation
     client_router = Router(
-        client_data['ip'], client_data["latitude"], client_data["longitude"])
+        ip=client_data['ip'], latitude=client_data["latitude"], longitude=client_data["longitude"], continent_code=None)
     # Retrieve location information using DNS (socket) & IP_INFO_ACCESS_TOKEN
     server_router = Router(
-        server_data["ip"], server_data["latitude"], server_data["longitude"])
+        ip=server_data["ip"], latitude=server_data["latitude"], longitude=server_data["longitude"], continent_code=None)
 
     # 2. Route from source -> destination, and vice versa
     request_routes = generate_routes(client_router, server_router, num_packets)
@@ -92,10 +92,16 @@ def simulate_http_request(request_url, request_method, request_content=None):
 # Generate _num_routes_ routes from the _origin_ router to the _destination_ router
 def generate_routes(origin, destination, num_routes):
 
+    print(f"Origin: {origin}")
+    print(f"Destination: {destination}")
+
+    # points = Points.query.all()
+    routers = Router.query.all()
+
     routes = []
 
-    for i in range(num_routes):
-        routes.append(origin.route(destination, routers))
+    route = origin.route(destination, origin)
+    print(route[0])
 
     return routes
 

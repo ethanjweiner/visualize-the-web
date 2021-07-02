@@ -1,5 +1,7 @@
 from web_visualizer import db
 
+MAX_PATH_LENGTH = 30
+
 
 class Point(db.Model):
     __tablename__ = 'points'  # Store all in a singular table
@@ -16,7 +18,11 @@ class Point(db.Model):
     }
 
     def __repr__(self):
-        return f"Point({self.type, self.latitude, self.longitude, self.continent_code})"
+        return f"Point{self.type, self.latitude, self.longitude, self.continent_code}"
+
+    # Abstract
+    def route():
+        return 'Route'
 
 
 # Inherit Point class w/ Routers & Landing Points
@@ -31,7 +37,7 @@ class Router(Point):
     ip = db.Column(db.String(40), nullable=True)
 
     def __repr__(self):
-        return f"Router({self.ip, self.latitude, self.longitude, self.continent_code})"
+        return f"Router{self.ip, self.latitude, self.longitude, self.continent_code}"
 
     def toJson(self):
         return {
@@ -42,8 +48,84 @@ class Router(Point):
             "continent_code": self.continent_code
         }
 
+    # route : Router Router [List-of Router] -> [List-of Router]
+    # Determine a route from _self_ to _destination_, choosing another router from ROUTERS or LANDING_POINTS (if needed)
+    # ACCUMULATOR: The _path_ generated so far in the routing process
+    # TERMINATION:
+    # - Dealing with the circular case (adding the same router to the path twice) should ensure that all routers are searched through
+    # - The chosen neighbor for the path must be closer to the destination than the previous router
+    # HEURISTIC: Distance of router from destination
 
-# Inherit Point class w/ Routers & Landing Points
+    def route(self, destination, routers, path=None):
+
+        # Set the default path
+        if path == None:
+            path = []
+
+        # Base case: The destination has been reached -> Add destination & return
+        if self.latitude == destination.latitude and self.longitude == destination.longitude:
+            path.append(destination)
+            return path
+        # If we have run into a circular case, the path is invalid
+        elif self in path:
+            return False
+        # If the current path is too long, the path is invalid
+        elif len(path) > MAX_PATH_LENGTH:
+            return False
+        # Search for a path until it is found, increasing the radius of search as needed
+        else:
+            # Update the path accumulator
+            path.append(self)
+
+            candidate_path = False
+            radius = 1
+
+            # Try a path, starting with the closest routers
+            while not candidate_path:
+                candidate_path = self.route_neighbors(
+                    destination, radius, routers, path=path)
+                radius += 1
+
+            return candidate_path
+
+     # route_neighbors : Router Router Number [List-of Router] -> [Maybe List-of Router]
+    # Attempts to find a path (of at most 30 routers) from _origin_ to _destination_, testing all routers within _radius_ of _origin_
+    def route_neighbors(self, destination, radius, routers, path=[]):
+
+        candidate_routers = self.neighbors(destination, routers, radius)
+
+        # Sort routers for efficiency (test closest routers first)
+        candidate_routers.sort(
+            key=lambda router: distance(router, destination))
+
+        # If the destination is a neighbor, the path is complete
+        if destination in candidate_routers:
+            path.append(destination)
+            return path
+
+        for candidate in candidate_routers:
+            # Append the candidate to a new path
+
+            candidate_path = candidate.route(destination, routers, path=path)
+
+            if candidate_path:
+                return candidate_path
+
+        return False
+
+    # neighbors : Router Router Number [List-of Routers] -> [Maybe List-of Routers]
+    # Attempts to find routers within _radius_ of _self_ that are closer to _destination_ than _self_
+    def neighbors(self, destination, routers, radius):
+        # is_candidate : Router -> Boolean
+        # Is _router_ a neighbor of _self_ (as defined in the purpose statement)?
+        def is_candidate(router):
+            return (self is not router) and (router.continent_code == self.continent_code) and (distance(self, router) <= radius) and (distance(router, destination) < distance(self, destination))
+        # Try finding neighbors within _radius_
+        candidates = list(filter(is_candidate, routers))
+
+        return candidates
+
+
 class LandingPoint(Point):
 
     __tablename__ = None  # For STI, use the same table name as parent
