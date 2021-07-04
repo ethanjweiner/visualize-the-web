@@ -1,6 +1,9 @@
 from web_visualizer import db
+from web_visualizer.helpers import get_continent, distance
 
-MAX_PATH_LENGTH = 30
+MAX_PATH_LENGTH = 50
+# Consider dynamically setting radius increment based on distance?
+RADIUS_INCREMENT = .75
 
 
 class Point(db.Model):
@@ -57,34 +60,40 @@ class Router(Point):
     # HEURISTIC: Distance of router from destination
 
     def route(self, destination, routers, path=None):
+        # Include the destination in the path to search for
+        if destination not in routers:
+            routers.append(destination)
 
         # Set the default path
         if path == None:
             path = []
 
-        # Base case: The destination has been reached -> Add destination & return
-        if self.latitude == destination.latitude and self.longitude == destination.longitude:
-            path.append(destination)
-            return path
+        # If the current path is too long, the path is invalid
+        if len(path) > MAX_PATH_LENGTH:
+            return False
+
         # If we have run into a circular case, the path is invalid
         elif self in path:
             return False
-        # If the current path is too long, the path is invalid
-        elif len(path) > MAX_PATH_LENGTH:
-            return False
+
+        # Base case: The destination has been reached -> Add destination & return
+        elif self.latitude == destination.latitude and self.longitude == destination.longitude:
+            path.append(destination)
+            return path
+
         # Search for a path until it is found, increasing the radius of search as needed
         else:
             # Update the path accumulator
             path.append(self)
 
             candidate_path = False
-            radius = 1
+            radius = RADIUS_INCREMENT
 
             # Try a path, starting with the closest routers
             while not candidate_path:
                 candidate_path = self.route_neighbors(
                     destination, radius, routers, path=path)
-                radius += 1
+                radius += RADIUS_INCREMENT
 
             return candidate_path
 
@@ -119,7 +128,7 @@ class Router(Point):
         # is_candidate : Router -> Boolean
         # Is _router_ a neighbor of _self_ (as defined in the purpose statement)?
         def is_candidate(router):
-            return (self is not router) and (router.continent_code == self.continent_code) and (distance(self, router) <= radius) and (distance(router, destination) < distance(self, destination))
+            return (self is not router) and (self.continent_code == None or router.continent_code == self.continent_code) and (distance(self, router) <= radius) and (distance(router, destination) < distance(self, destination))
         # Try finding neighbors within _radius_
         candidates = list(filter(is_candidate, routers))
 

@@ -1,21 +1,3 @@
-// Add a body parameter for post requests
-const getRadio = document.querySelector("#get-radio");
-const postRadio = document.querySelector("#post-radio");
-
-postRadio.addEventListener("input", () => {
-  toggleMethod();
-});
-
-getRadio.addEventListener("input", () => {
-  toggleMethod();
-});
-
-function toggleMethod() {
-  const body = document.querySelector("#request-content");
-  if (body.classList.contains("d-none")) body.classList.remove("d-none");
-  else body.classList.add("d-none");
-}
-
 // loadCables : [Google Maps Map] -> _
 // Statically displays all oceanic cables on _map_
 function loadCables(map) {
@@ -34,7 +16,7 @@ function loadCables(map) {
 function generateMarkerContent() {}
 
 // updateRouters : [Google Maps Map] Number -> _
-// Generates and displays markers on _map_
+// Generates and displays _num_routers_ markers on _map_ representing routers
 function updateRouters(map, num_routers) {
   // Retrieves the router locations for a particular # of routers
   $.getJSON(
@@ -45,6 +27,8 @@ function updateRouters(map, num_routers) {
     }
   );
 }
+
+// Displaying the routers
 
 // displayRouters : [Google Maps Map] [List-of Routers] -> _
 // Superimposes router icons on _map_ at the locations specified by _coordinates_
@@ -79,7 +63,9 @@ function displayRouters(map, routers) {
 function displayRouter(map, router, icon) {
     // Create a Google Maps Coordinate for that router
     const coordinate = new google.maps.LatLng(router.latitude, router.longitude)
+
     // Display a marker at that coordinate
+    // Save the router in an array, in case it is used later in the animation
     ROUTER_MARKERS.push(new google.maps.Marker({
       position: coordinate,
       map,
@@ -87,6 +73,17 @@ function displayRouter(map, router, icon) {
     }));
 }
 
+// Deleting the routers
+
+function deleteRouterMarkers() {
+  clearRouterMarkers();
+  ROUTER_MARKERS = [];
+}
+
+
+function clearRouterMarkers() {
+  setMapOnAll(null);
+}
 
 function setMapOnAll(map) {
   for (let i = 0; i < ROUTER_MARKERS.length; i++) {
@@ -94,15 +91,25 @@ function setMapOnAll(map) {
   }
 }
 
-function clearRouterMarkers() {
-  setMapOnAll(null);
-}
-
 function showRouterMarkers() {
   setMapOnAll(map);
 }
 
-function deleteRouterMarkers() {
-  clearRouterMarkers();
-  ROUTER_MARKERS = [];
+// Additional helpers
+
+const getRadio = document.querySelector("#get-radio");
+const postRadio = document.querySelector("#post-radio");
+
+postRadio.addEventListener("input", () => {
+  toggleMethod();
+});
+
+getRadio.addEventListener("input", () => {
+  toggleMethod();
+});
+
+function toggleMethod() {
+  const body = document.querySelector("#request-content");
+  if (body.classList.contains("d-none")) body.classList.remove("d-none");
+  else body.classList.add("d-none");
 }

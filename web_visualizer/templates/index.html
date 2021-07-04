@@ -86,13 +86,35 @@
         <form class="mt-3 mx-2 p-2 rounded">
           <div class="range">
             <label for="num-routers" class="form-label">Number of Routers</label>
-            <input type="range" class="form-range" id="num-routers" value="25" min="5">
-            <output for="num-routers" id="num-routers-output">2500</output>
+            <input type="range" class="form-range" id="num-routers" value="10" min="5">
+            <output for="num-routers" id="num-routers-output">1000</output>
           </div>
           <div class="range mt-3">
             <label for="num-packets" class="form-label">Number of Packets to Animate</label>
-            <input type="range" class="form-range" id="num-packets" value="50" min="1">
-            <output for="num-packets" id="num-packets-output">50</output>
+            <input type="range" class="form-range" id="num-packets" value="5" min="1" max="25">
+            <output for="num-packets" id="num-packets-output">5</output>
+          </div>
+          <div class="range mt-3">
+            <label for="speed" class="form-label">Speed</label>
+            <input type="range" class="form-range" id="speed" value="1" min="1" max="20">
+            <p>Slow ---> Fast</p>
+          </div>
+        </form>
+      </div>
+      <hr class="d-none d-md-block">
+      <div id="add-marker">
+        <h4 class="text-center">Add Marker</h4>
+        <form class="mt-3 mx-2 p-2 rounded" id="coord-form">
+          <label for="latitude" class="form-label">Latitude</label>
+          <input type="text" placeholder="Latitude" id="latitude" name="latitude" class="form-control">
+          <label class="form-label" for="longitude"></label>
+          <input type="text" placeholder="Longitude" id="longitude" name="longitude" class="form-control">
+          <div class="d-grid">
+            <input
+              type="submit"
+              class="btn btn-light mt-3"
+              value="Add"
+            />
           </div>
         </form>
       </div>

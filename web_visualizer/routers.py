@@ -67,12 +67,6 @@ def landing_points():
     return landing_points
 
 
-# get_continent : Number Number -> String
-# Retrieves the continent code associated with the continent in which [_latitude_, _longitude_] is located
-def get_continent(latitude, longitude):
-    return 'Continent'
-
-
 # store_points : [List-of Router] [List-of LandingPoint] -> _
 # Stores the points in sqlite3 database for later access
 # EFFICIENCY: FAST
