@@ -20,9 +20,14 @@ def routes():
 
     routers = Router.query.all()
 
+    # Dynamically set radius increment based on distance
+    # Wider radius ==> More options for routing
+    radius_increment = distance(client_router, server_router) / 15
+    print(f"Routing at a radius of {radius_increment}")
+
     if direction == "request":
-        route = client_router.route(server_router, routers)
+        route = client_router.route(server_router, routers, radius_increment)
     else:
-        route = server_router.route(client_router, routers)
+        route = server_router.route(client_router, routers, radius_increment)
 
     return jsonify(list(map(lambda router: router.toJson(), route)))

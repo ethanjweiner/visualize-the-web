@@ -1,9 +1,8 @@
 from web_visualizer import db
 from web_visualizer.helpers import get_continent, distance
+import random
 
 MAX_PATH_LENGTH = 50
-# Consider dynamically setting radius increment based on distance?
-RADIUS_INCREMENT = .75
 
 
 class Point(db.Model):
@@ -59,7 +58,8 @@ class Router(Point):
     # - The chosen neighbor for the path must be closer to the destination than the previous router
     # HEURISTIC: Distance of router from destination
 
-    def route(self, destination, routers, path=None):
+    def route(self, destination, routers, radius_increment, path=None):
+
         # Include the destination in the path to search for
         if destination not in routers:
             routers.append(destination)
@@ -87,25 +87,24 @@ class Router(Point):
             path.append(self)
 
             candidate_path = False
-            radius = RADIUS_INCREMENT
+            radius = radius_increment
 
             # Try a path, starting with the closest routers
             while not candidate_path:
                 candidate_path = self.route_neighbors(
                     destination, radius, routers, path=path)
-                radius += RADIUS_INCREMENT
+                radius += radius_increment
 
             return candidate_path
 
      # route_neighbors : Router Router Number [List-of Router] -> [Maybe List-of Router]
     # Attempts to find a path (of at most 30 routers) from _origin_ to _destination_, testing all routers within _radius_ of _origin_
     def route_neighbors(self, destination, radius, routers, path=[]):
-
+        # Search for nearby routers closer to destination
         candidate_routers = self.neighbors(destination, routers, radius)
 
         # Sort routers for efficiency (test closest routers first)
-        candidate_routers.sort(
-            key=lambda router: distance(router, destination))
+        random.shuffle(candidate_routers)
 
         # If the destination is a neighbor, the path is complete
         if destination in candidate_routers:
@@ -115,7 +114,8 @@ class Router(Point):
         for candidate in candidate_routers:
             # Append the candidate to a new path
 
-            candidate_path = candidate.route(destination, routers, path=path)
+            candidate_path = candidate.route(
+                destination, routers, radius, path=path)
 
             if candidate_path:
                 return candidate_path
