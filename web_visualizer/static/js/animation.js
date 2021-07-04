@@ -67,8 +67,6 @@ async function animate_routes(direction, num_routes, lines, map) {
 // Animates _route_ on _map_ by drawing lines at the current speed of the slider
 async function animate_route(route, map) {
 
-  console.log(route);
-
   return new Promise(function(resolve, reject) {
     let lines = [];
     let color = random_color();
@@ -118,7 +116,6 @@ function draw_line(r1, r2, color, map) {
 }
 
 function clear_lines(lines) {
-  console.log(lines);
   lines.forEach(line => {
     line.setMap(null);
   })

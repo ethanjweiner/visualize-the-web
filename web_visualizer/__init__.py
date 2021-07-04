@@ -1,3 +1,4 @@
+
 import os
 import jsmin
 import itertools
@@ -12,12 +13,13 @@ app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///data/points.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
-import web_visualizer.routers
-import web_visualizer.request
-import web_visualizer.routes
 
 # Other configuration
 app.config['SECRET_KEY'] = "vs&NwNhHHba$CPVCHWEmYj6X5RLqj@nWGD#3o%LHNW#k6cB@cD&7GtQVT4*TdPJN"
+
+import web_visualizer.routes
+import web_visualizer.request
+import web_visualizer.routers
 
 # Bundling Javascript
 assets = Environment(app)
@@ -45,11 +47,7 @@ def close_connection(exception):
         ip_db.close()
 
 
-def resetDatabase():
-    db.drop_all()
-    db.create_all()
-    db.session.commit()
+# Database should already be initialized with tables, so no need to create it
 
-
-resetDatabase()  # Try creating database here (else move outside)
-
+db.create_all()
+db.session.commit()

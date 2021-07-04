@@ -16,14 +16,13 @@ def routes():
     server_router = Router(ip=server_data['ip_details']['ip'], latitude=server_data['ip_details']['latitude'],
                            longitude=server_data['ip_details']['longitude'], continent_code=server_data['ip_details']['continent'])
 
-    print(client_router, server_router)
-
     routers = Router.query.all()
 
     # Dynamically set radius increment based on distance
     # Wider radius ==> More options for routing
     radius_increment = distance(client_router, server_router) / 15
-    print(f"Routing at a radius of {radius_increment}")
+    print(
+        f"Routing at a radius of {radius_increment} from {client_router} to {server_router}")
 
     if direction == "request":
         route = client_router.route(server_router, routers, radius_increment)

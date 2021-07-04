@@ -143,8 +143,7 @@ class LandingPoint(Point):
         'polymorphic_identity': 'landing_point'
     }
 
-    # Use a foreign key to relate to landing points
-    point_id = db.Column(db.Integer, nullable=True)
+    point_id = db.Column(db.Text, nullable=True, unique=True)
 
     def __repr__(self):
         return f"LandingPoint({self.point_id, self.latitude, self.longitude, self.continent_code})"
@@ -157,3 +156,17 @@ class LandingPoint(Point):
             "longitude": self.longitude,
             "continent_code": self.continent_code
         }
+
+    def route():
+        return
+
+
+class Path(db.Model):
+    __tablename__ = 'paths'
+
+    id = db.Column(db.Integer, primary_key=True)
+    start_point_id = db.Column(db.Text, nullable=False)
+    end_point_id = db.Column(db.Text, nullable=False)
+
+    def __repr__(self):
+        return f"Path from {self.start_point_id} to {self.end_point_id}"
