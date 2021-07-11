@@ -33,7 +33,6 @@ def routers():
     # Generate and store routers in database
 
     store_routers(num_routers)
-    store_paths()
 
     # Query this new set of points from the database
     return jsonify(list(map(lambda point: point.toJson(), Point.query.all())))
@@ -56,6 +55,8 @@ def store_routers(num_routers):
 
     db.session.commit()
 
+
+# TEMPORARY DATABASE FUNCTIONS
 
 # store_paths
 # TEMPORARY FUNCTION: Used to initially store the paths into a table

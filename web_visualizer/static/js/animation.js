@@ -69,6 +69,8 @@ async function animate_route(route, map) {
 
   return new Promise(function(resolve, reject) {
     let lines = [];
+    let blurred_lines = []
+    
     let color = random_color();
 
     // animate_line : Integer -> _
@@ -79,12 +81,15 @@ async function animate_route(route, map) {
   
       // We have finished the route animation
       if (index == route.length - 1) {
-        resolve(lines);
-        return;
+        clear_lines(lines);
+        draw_lines(blurred_lines, map);
+        resolve(blurred_lines);
       }
       
       else {
-        lines.push(draw_line(route[index], route[index + 1], color, map));
+        lines.push(draw_line(route[index], route[index + 1], color, map, false));
+        blurred_lines.push(draw_line(route[index], route[index + 1], color, map, true));
+
         setTimeout(() => {
           animate_line(index + 1);
         }, 1000/speed)
@@ -98,27 +103,62 @@ async function animate_route(route, map) {
 }
 
 // draw_line : Router Router Color Map -> Path
-// Draw a line between _r1_ and _r2_ on _map_
-function draw_line(r1, r2, color, map) {
+// Draw a line between _r1_ and _r2_ on _map_, dependent on if the line is _blurred_
+function draw_line(r1, r2, color, map, blurred) {
   const path = [
     { lat: parseFloat(r1.latitude), lng: parseFloat(r1.longitude) },
     { lat: parseFloat(r2.latitude), lng: parseFloat(r2.longitude) }
   ];
   const line = new google.maps.Polyline({
     path,
-    geodesic: true,
+    geodesic: false,
     strokeColor: color,
-    strokeOpacity: 1.0,
-    strokeWeight: 3
+    strokeOpacity: blurred ? 0.5 : 1.0,
+    strokeWeight: blurred ? 2 : 3
   })
-  line.setMap(map);
+  if (blurred) {
+    line.setMap(null);
+  } else {
+    line.setMap(map);
+  }
   return line;
+}
+
+function draw_lines(lines, map) {
+  lines.forEach(line => {
+    line.setMap(map);
+  })
 }
 
 function clear_lines(lines) {
   lines.forEach(line => {
     line.setMap(null);
   })
+}
+
+function blur_lines(lines, map) {
+  let blurred_lines = []
+  // Draw the blurred lines
+  lines.forEach(line => {
+    // Add a new line with a lower stroke opacity
+    console.log(line, line.path, line.geodesic)
+    blurred_lines.push(new google.maps.Polyline({
+      path: line.path,
+      geodesic: false,
+      strokeColor: line.strokeColor,
+      strokeOpacity: 0.5,
+      strokeWeight: 3
+    }));
+  })
+
+  blurred_lines.forEach(blurred_line => {
+    blurred_line.setMap(map);
+  })
+
+  // Remove the previously drawn lines
+  clear_lines(lines);
+
+  return blurred_lines;
 }
 
 function random_color() {
