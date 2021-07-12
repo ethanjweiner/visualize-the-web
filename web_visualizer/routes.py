@@ -3,6 +3,13 @@ from flask import jsonify, request, session
 from web_visualizer.classes import Point, Router, LandingPoint
 from web_visualizer.helpers import *
 
+# Note
+
+# A Route is a [List-of X] where X can be a:
+# - Router
+# - LandingPoint
+# - Cable
+
 
 @app.route("/routes")
 def routes():
@@ -35,6 +42,6 @@ def routes():
                 client_router, routers, radius_increment)
     print(len(route))
     if len(route):
-        return jsonify(list(map(lambda router: router.toJson(), route)))
+        return jsonify(list(map(lambda node: node.toJson(), route)))
     else:
         return "Could not find a route"
