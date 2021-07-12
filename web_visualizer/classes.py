@@ -164,7 +164,7 @@ class LandingPoint(Point):
             "point_id": self.point_id,
             "latitude": self.latitude,
             "longitude": self.longitude,
-            "continent_code": self.continent_code
+            "continent_code": self.continent_code,
         }
 
     # route : Router Router [List-of Router] Number -> [List-of Router]
@@ -192,7 +192,6 @@ class LandingPoint(Point):
             return Point.route(self, destination, routers, radius_increment, path=path)
         # If they are not on the same landmass, route overseas
         else:
-            new_path = path + [self]
             # 1. The landing point MUST route to another landing point
             cable_candidates = Path.query.filter_by(
                 start_point_id=self.point_id).all()
@@ -201,25 +200,34 @@ class LandingPoint(Point):
             def is_valid_cable(cable):
                 endpoint = LandingPoint.query.filter_by(
                     point_id=cable.end_point_id).first()
-                return endpoint != None and not contains_continent_code(endpoint.continent_code, new_path)
+                return endpoint != None and not contains_continent_code(endpoint.continent_code, path+[self])
 
             cable_candidates = list(filter(is_valid_cable, cable_candidates))
 
             if not len(cable_candidates):
                 return False
 
-            landing_point_candidates = list(map(lambda cable: LandingPoint.query.filter_by(
-                point_id=cable.end_point_id).first(), cable_candidates))
+            def path_to_landing_point(path):
+                return {
+                    "point": LandingPoint.query.filter_by(point_id=path.end_point_id).first(),
+                    "cable_slug": path.slug
+                }
+
+            landing_point_candidates = list(
+                map(path_to_landing_point, cable_candidates))
 
             # Choose the endpoint closest to the destination
             landing_point_candidates.sort(
-                key=lambda landing_point: distance(landing_point, destination))
+                key=lambda landing_point: distance(landing_point["point"], destination))
 
             candidate_path = False
 
             for landing_point in landing_point_candidates:
-                candidate_path = landing_point.route(
-                    destination, routers, radius_increment, path=new_path)
+                new_path = path + \
+                    [self]+[Cable(self.point_id, landing_point["point"].point_id,
+                                  landing_point["cable_slug"])]
+                candidate_path = landing_point["point"].route(
+                    destination, routers, radius_increment, new_path)
                 if candidate_path:
                     break
 
@@ -232,6 +240,36 @@ class Path(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     start_point_id = db.Column(db.Text, nullable=False)
     end_point_id = db.Column(db.Text, nullable=False)
+    slug = db.Column(db.Text, nullable=False)
 
     def __repr__(self):
         return f"Path from {self.start_point_id} to {self.end_point_id}"
+
+
+class Cable():
+    type = "cable"
+    nodes = []
+    continent_code = None
+    # When constructing, fill in all the inner nodes
+
+    def __init__(self, start_coordinate, end_coordinate, slug):
+        self.slug = slug
+        self.start_coordinate = start_coordinate
+        self.end_coordinate = end_coordinate
+        # Set the inner nodes in a separate function
+        self.create_nodes()
+
+    # create_nodes : Coordinate Coordinate -> [List-of Coordinate]
+    # Determine the inner nodes that define the cable designated by _slug_ from _start_coordinate_ to _end_coordinate_
+    # Uses the official oceanic cable GeoJSON to determine these nodes
+    def create_nodes(self):
+        self.nodes.append(self.start_coordinate)
+        self.nodes = self.nodes + []  # Temporary solution
+        self.nodes.append(self.end_coordinate)
+
+    def toJson(self):
+        return {
+            "type": self.type,
+            "slug": self.slug,
+            "nodes": self.nodes
+        }

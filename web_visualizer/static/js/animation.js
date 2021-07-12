@@ -67,42 +67,72 @@ async function animate_routes(direction, num_routes, lines, map) {
 // Animates _route_ on _map_ by drawing lines at the current speed of the slider
 async function animate_route(route, map) {
 
+  console.log(route);
+
   return new Promise(function(resolve, reject) {
     let lines = [];
-    let blurred_lines = []
+    let cables = [];
+    let blurred_lines = [];
+    let blurred_cables = [];
     
     let color = random_color();
 
-    // animate_line : Integer -> _
-    // Animates the line at _index_ of route
-  
-    const animate_line = (index) => {
+    // [Helper] animate_connection : Integer -> _ 
+    // Animates the connection (either a line or Polyline) at _index_ of route
+
+    const animate_connection = (index) => {
       const speed = $('input#speed').val()
-  
       // We have finished the route animation
+      
       if (index == route.length - 1) {
         clear_lines(lines);
+        clear_lines(cables);
         draw_lines(blurred_lines, map);
-        resolve(blurred_lines);
+        draw_lines(blurred_cables);
+        // Provide the blurred lines & cables for animation
+        resolve(blurred_lines.concat(blurred_cables));
       }
-      
+      // Part of the route is left to animate
       else {
-        lines.push(draw_line(route[index], route[index + 1], color, map, false));
-        blurred_lines.push(draw_line(route[index], route[index + 1], color, map, true));
+        let p1 = route[index];
+        let p2 = route[index+1]
 
+        // Skip this type of connection
+        if (p2.type == "cable") {
+          animate_connection(index + 1);
+        // Animate any cables
+        } else if (p1.type == "cable") {
+          // cables.push(draw_cable(p1, p2, color, map, false));
+          // blurred_cables.push(draw_cable(p1, p2, color, map, true));
+          // Temporary: Just draw a line in place of the cable
+          lines.push(draw_line(route[index-1], p2, color, map, false));
+          blurred_lines.push(draw_line(route[index-1], p2, color, map, true));
+        }
+        // Animate all lines
+        else {
+          lines.push(draw_line(p1, p2, color, map, false));
+          blurred_lines.push(draw_line(p1, p2, color, map, true));
+        }
+
+        // After a short wait, animate the next connection
         setTimeout(() => {
-          animate_line(index + 1);
+          animate_connection(index+1);
         }, 1000/speed)
       }
-  
     }
-  
-    animate_line(0);
+    animate_connection(0);
   })
 
 }
 
-// draw_line : Router Router Color Map -> Path
+// draw_cable: LandingPoint LandingPoint Color Map Boolean -> Path
+// Draws a polyline between _lp1_ and _lp2_, using the coordinates associated with the landing point's cable
+function draw_cable(lp1, lp2, color, map, blurred) {
+
+}
+
+
+// draw_line : Router Router Color Map Boolean -> Path
 // Draw a line between _r1_ and _r2_ on _map_, dependent on if the line is _blurred_
 function draw_line(r1, r2, color, map, blurred) {
   const path = [
