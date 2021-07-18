@@ -1,8 +1,11 @@
 from web_visualizer import db
 from web_visualizer.helpers import get_continent, distance, contains_continent_code
 import random
+from math import isclose
+import json
 
 MAX_PATH_LENGTH = 50
+CABLES_GEOJSON_PATH = 'web_visualizer/data/cables.json'
 
 
 class Point(db.Model):
@@ -223,11 +226,16 @@ class LandingPoint(Point):
             candidate_path = False
 
             for landing_point in landing_point_candidates:
-                new_path = path + \
-                    [self]+[Cable(self.point_id, landing_point["point"].point_id,
-                                  landing_point["cable_slug"])]
+
+                cable = Cable([float(self.longitude), float(self.latitude)], [float(landing_point["point"].longitude),
+                                                                              float(landing_point["point"].latitude)], landing_point["cable_slug"])
+                cable.find_nodes()
+
+                new_path = path + [self, cable]
+
                 candidate_path = landing_point["point"].route(
                     destination, routers, radius_increment, new_path)
+
                 if candidate_path:
                     break
 
@@ -250,22 +258,11 @@ class Cable():
     type = "cable"
     nodes = []
     continent_code = None
-    # When constructing, fill in all the inner nodes
 
     def __init__(self, start_coordinate, end_coordinate, slug):
         self.slug = slug
         self.start_coordinate = start_coordinate
         self.end_coordinate = end_coordinate
-        # Set the inner nodes in a separate function
-        self.create_nodes()
-
-    # create_nodes : Coordinate Coordinate -> [List-of Coordinate]
-    # Determine the inner nodes that define the cable designated by _slug_ from _start_coordinate_ to _end_coordinate_
-    # Uses the official oceanic cable GeoJSON to determine these nodes
-    def create_nodes(self):
-        self.nodes.append(self.start_coordinate)
-        self.nodes = self.nodes + []  # Temporary solution
-        self.nodes.append(self.end_coordinate)
 
     def toJson(self):
         return {
@@ -273,3 +270,104 @@ class Cable():
             "slug": self.slug,
             "nodes": self.nodes
         }
+
+    # Update the nodes with the cable
+    def find_nodes(self):
+        with open(CABLES_GEOJSON_PATH) as cables_geojson:
+            whole_cables = json.load(cables_geojson)["features"]
+
+            # Find the cable with the proper slug
+            whole_cable = None
+            for cable in whole_cables:
+                if cable["properties"]["slug"] == self.slug:
+                    whole_cable = cable["geometry"]["coordinates"]
+                    break
+
+            # If no cable could be found, this route is false
+            if whole_cable == None:
+                self.nodes = []
+
+            self.nodes = polyline_dfs(
+                whole_cable, self.start_coordinate, self.end_coordinate)
+            return self.nodes
+
+
+# polyline_dfs : [List-of [List-of Coordinates]] Coordinate Coordinate -> [List-of Coordinates]
+# Using the lines in _whole_cable, finds some set of lines that connect start_coordinate and end_coordinates
+def polyline_dfs(whole_cable, start_coordinate, end_coordinate):
+    # Create a DFS styled algorithm here
+    cable_parts = whole_cable + reverse_cable_parts(whole_cable)
+
+    # ACCUMULATOR: The cable produced so far
+    def polyline_dfs_helper(start_coordinate, cable_accumulator):
+        # The destination has been reached
+        if same_location(start_coordinate, end_coordinate):
+            return cable_accumulator + [start_coordinate]
+
+        # Cyclical case
+        elif find_coord(start_coordinate, cable_accumulator):
+            return False
+
+        else:
+            # Determine all cable parts that start with the correct coordinate
+            cable_part_candidates = list(filter(lambda cable_part: same_location(
+                start_coordinate, cable_part[0]), cable_parts))
+
+            # Expand all the cable parts
+            cable_part_candidates = expand_cables(cable_part_candidates)
+
+            candidate_path = False
+
+            for cable_part in cable_part_candidates:
+                # New starting coordinate: The end of the cable part
+                # Update accumulator with the cable part (not including the end of the cable)
+                candidate_path = polyline_dfs_helper(
+                    cable_part[len(cable_part)-1], cable_accumulator + cable_part[:-1])
+                if candidate_path:
+                    return candidate_path
+
+            # No candidates could be found from the starting point
+            return []
+
+    return polyline_dfs_helper(start_coordinate, [])
+
+# find_coord : Coordinate [List-of Coordinate] -> Boolean
+# Is _coordinate_ in _cable_?
+
+
+def find_coord(coordinate, cable):
+    for coord in cable:
+        if same_location(coordinate, coord):
+            return True
+    return False
+
+# same_location : Coordinate Coordinate -> Boolean
+# Are _c1_ and _c2_ approximately the same location (within 10^-2 of a degree)?
+
+
+def same_location(c1, c2):
+    # Latitudes and longitudes are approximately equal
+    return isclose(c1[0], c2[0], abs_tol=10**-2) and isclose(c1[1], c2[1], abs_tol=10**-2)
+
+
+# reverse_cable_parts : [List-of [List-of Coordinates]] -> [List-of [List-of Coordinates]]
+# Reverses the direction of every cable part in _whole_cable_
+def reverse_cable_parts(whole_cable):
+    return list(map(lambda cable_part: [ele for ele in reversed(cable_part)], whole_cable))
+
+
+# expand_cables : [List-of [List-of Coordinates]] -> _
+# Expands each part in _cable_ such that every sub-cable in that part is produced
+def expand_cables(cables):
+    # Assumes that a cable has at least 2 nodes
+    def expand_cable(cable):
+        sub_cables = []
+        for end in range(2, len(cable)+1):
+            sub_cables.append(cable[0:end])
+        return sub_cables
+
+    temp = []
+    for cable in cables:
+        temp = temp + expand_cable(cable)
+    cables = temp
+    return cables

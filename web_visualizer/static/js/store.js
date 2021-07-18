@@ -1,6 +1,7 @@
 
 // Constants
 const ZOOM = 3;
+const ROUTER_SIZE = 15;
 const icons = {
   client: {
     icon: "static/images/client.png",
