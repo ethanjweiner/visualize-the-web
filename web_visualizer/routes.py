@@ -1,106 +1,47 @@
 from web_visualizer import app
-import socket
-import ipinfo
-from flask import jsonify, request
-from web_visualizer.classes import Router, LandingPoint
-import requests
-from urllib.parse import urlparse
+from flask import jsonify, request, session
+from web_visualizer.classes import Point, Router, LandingPoint
+from web_visualizer.helpers import *
 
-IP_INFO_ACCESS_TOKEN = '798b7b7ebf8444'
+# Note
 
-# Animate: Sends the request asynchronously, and runs an animation
+# A Route is a [List-of X] where X can be a:
+# - Router
+# - LandingPoint
+# - Cable
 
 
 @app.route("/routes")
 def routes():
-    # 1. Run the AJAX request, & retrieve response data
-    client_data = {
-        "request_url": request.args.get("request_url"),
-        "request_method": request.args.get("request_method"),
-        "request_content": request.args.get("request_content"),
-        "ip": None,
-        "latitude": request.args.get("latitude"),
-        "longitude": request.args.get("longitude")
-    }
+    direction = request.args.get("direction")
 
-    num_packets = int(request.args.get("num_packets"))
+    client_data = session['client_data']
+    server_data = session['server_data']
 
-    server_data = simulate_http_request(client_data["request_url"], client_data["request_method"], client_data["request_content"])
+    client_router = Router(ip=client_data['ip_details']['ip'], latitude=client_data['request_details']['latitude'],
+                           longitude=client_data['request_details']['longitude'], continent_code=client_data['ip_details']['continent'])
+    server_router = Router(ip=server_data['ip_details']['ip'], latitude=server_data['ip_details']['latitude'],
+                           longitude=server_data['ip_details']['longitude'], continent_code=server_data['ip_details']['continent'])
 
-    # If there was an error processing the request, don't animate
-    if server_data == 1:
-        return jsonify("An error occured while sending the request")
+    routers = Point.query.all()
 
-    # Create routers for the client & server to be able to route from
-    client_router = Router(client_data["latitude"], client_data["longitude"]) # Retrieve location information using geolocation
-    server_router = Router(server_data["latitude"], server_data["longitude"]) # Retrieve location information using DNS (socket) & IP_INFO_ACCESS_TOKEN
-    
-    # 2. Route from source -> destination, and vice versa
-    request_routes = generate_routes(client_router, server_router, num_packets)
-    response_routes = generate_routes(server_router, client_router, num_packets)
+    # Dynamically set radius increment based on distance
+    # Wider radius ==> More options for routing
+    radius_increment = distance(client_router, server_router) / 15
+    print(
+        f"Routing at a radius of {radius_increment} from {client_router} to {server_router}")
 
-    # 3. Send request routes and response routes to the browser to animate
-    return jsonify("Routes and animation data")
+    route = False
 
-
-# simulate_http_request
-# Simulates an HTTP request, & subsequently retrieves information about the server and its response
-# - Response content
-# - Server ip
-# - Server location
-def simulate_http_request(request_url, request_method, request_content=None):
-    # Retrieve response content
-
-    if request_method == "POST" :
-        response = requests.post(request_url, data=request_content)
+    while not route:
+        if direction == "request":
+            route = client_router.route(
+                server_router, routers, radius_increment)
+        else:
+            route = server_router.route(
+                client_router, routers, radius_increment)
+    print(len(route))
+    if len(route):
+        return jsonify(list(map(lambda node: node.toJson(), route)))
     else:
-        response = request.get(request_url)
-
-
-    # If the response is unsuccessful, signify an error
-    if response.status_code / 100 == 4 or response.status_code / 100 == 5:
-        return 1 # The response was faulty
-
-    host_name = get_host_name(response.url)
-
-    if host_name == 1:
-        return 2 # The host was invalid
-
-    # Retrieve information about the server/host
-    server_ip = socket.gethostbyname(host_name)
-    handler = ipinfo.getHandler(IP_INFO_ACCESS_TOKEN)
-    details = handler.getDetails(server_ip)
-
-
-    return {
-        "response_url" : response.url,
-        "status_code" : response.status_code,
-        "content-type" : response.headers["content-type"],
-        "ip" : server_ip,
-        "city" : details.city,
-        "region" : details.region,
-        "country" : details.country,
-        "latitude" : details.loc.split(',')[0],
-        "longitude" : details.loc.split(',')[1]
-    }
-
-
-# generate_routes : Router Router Number -> [List-of Router]
-# Generate _num_routes_ routes from the _origin_ router to the _destination_ router
-def generate_routes(origin, destination, num_routes):
-    routes = []
-
-    for i in range(num_routes):
-        routes.append(origin.route(destination))
-
-    return routes
-
-
-# get_host_name : String -> String
-# Determines the host name of the given _url_
-def get_host_name(url):
-    try:
-        parsed_url = urlparse(url)
-    except NameError:
-        return 1
-    return parsed_url.netloc
+        return "Could not find a route"
