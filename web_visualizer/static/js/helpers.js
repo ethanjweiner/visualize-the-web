@@ -36,18 +36,18 @@ function displayRouters(map, routers) {
 
   const routerMarkerImage = new google.maps.MarkerImage(
     icons["router"].icon,
-    new google.maps.Size(10,10),
+    new google.maps.Size(15,15),
     null,
     null,
-    new google.maps.Size(10,10)
+    new google.maps.Size(15,15)
   );
   
   const landingPointMarkerImage = new google.maps.MarkerImage(
     icons["landingPoint"].icon,
-    new google.maps.Size(10,10),
+    new google.maps.Size(15,15),
     null,
     null,
-    new google.maps.Size(10,10)
+    new google.maps.Size(15,15)
   );
 
 

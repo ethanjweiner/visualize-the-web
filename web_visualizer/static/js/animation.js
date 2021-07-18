@@ -39,9 +39,11 @@ async function animate(client_data, server_data, map) {
 // Generates and animates all the routes in a particular _direction_
 async function animate_routes(direction, num_routes, lines, map) {
   // Use natural # template to aid with asynchronous recursion
-
   if (num_routes <= 0) {
-    clear_lines(lines)
+    setTimeout(() => {
+      clear_lines(lines);
+      console.log("Cleared first routes")
+    }, 3000);
     return;
   } else {
     return new Promise(function(resolve, reject) {
@@ -67,13 +69,10 @@ async function animate_routes(direction, num_routes, lines, map) {
 // Animates _route_ on _map_ by drawing lines at the current speed of the slider
 async function animate_route(route, map) {
 
-  console.log(route);
-
+  console.log(route)
   return new Promise(function(resolve, reject) {
     let lines = [];
-    let cables = [];
     let blurred_lines = [];
-    let blurred_cables = [];
     
     let color = random_color();
 
@@ -86,32 +85,42 @@ async function animate_route(route, map) {
       
       if (index == route.length - 1) {
         clear_lines(lines);
-        clear_lines(cables);
         draw_lines(blurred_lines, map);
-        draw_lines(blurred_cables);
         // Provide the blurred lines & cables for animation
-        resolve(blurred_lines.concat(blurred_cables));
+        resolve(blurred_lines);
       }
-      // Part of the route is left to animate
+      // Part wof the route is left to animate
       else {
         let p1 = route[index];
         let p2 = route[index+1]
 
         // Skip this type of connection
-        if (p2.type == "cable") {
-          animate_connection(index + 1);
-        // Animate any cables
-        } else if (p1.type == "cable") {
-          // cables.push(draw_cable(p1, p2, color, map, false));
-          // blurred_cables.push(draw_cable(p1, p2, color, map, true));
-          // Temporary: Just draw a line in place of the cable
-          lines.push(draw_line(route[index-1], p2, color, map, false));
-          blurred_lines.push(draw_line(route[index-1], p2, color, map, true));
-        }
-        // Animate all lines
+        if (p2.type == "cable")
+          animate_connection(index + 1)
+        
         else {
-          lines.push(draw_line(p1, p2, color, map, false));
-          blurred_lines.push(draw_line(p1, p2, color, map, true));
+          // Determine the path to draw
+          let path = [];
+          // If one node is a cable, draw the cable polyline
+          if (p1.type == "cable") {
+            if (p1.nodes.length)
+              path = p1.nodes.map(node => { return { lat: node[1], lng: node[0] }}) 
+            else
+              path = [
+                { lat: parseFloat(route[index-1].latitude), lng: parseFloat(route[index-1].longitude) },
+                { lat: parseFloat(route[index+1].latitude), lng: parseFloat(route[index+1].longitude) }
+              ]
+          // Otherwise, draw a singular line between two routers
+          } else {
+            path = [
+              { lat: parseFloat(p1.latitude), lng: parseFloat(p1.longitude) },
+              { lat: parseFloat(p2.latitude), lng: parseFloat(p2.longitude) }
+            ]
+          }
+          
+          // Draw the polylines
+          lines.push(draw_line(path, color, map, false));
+          blurred_lines.push(draw_line(path, color, map, true));
         }
 
         // After a short wait, animate the next connection
@@ -125,20 +134,11 @@ async function animate_route(route, map) {
 
 }
 
-// draw_cable: LandingPoint LandingPoint Color Map Boolean -> Path
-// Draws a polyline between _lp1_ and _lp2_, using the coordinates associated with the landing point's cable
-function draw_cable(lp1, lp2, color, map, blurred) {
-
-}
-
 
 // draw_line : Router Router Color Map Boolean -> Path
-// Draw a line between _r1_ and _r2_ on _map_, dependent on if the line is _blurred_
-function draw_line(r1, r2, color, map, blurred) {
-  const path = [
-    { lat: parseFloat(r1.latitude), lng: parseFloat(r1.longitude) },
-    { lat: parseFloat(r2.latitude), lng: parseFloat(r2.longitude) }
-  ];
+// Draw a line on _map_ using a given _path_, dependent on if the line is _blurred_
+function draw_line(path, color, map, blurred) {
+
   const line = new google.maps.Polyline({
     path,
     geodesic: false,
