@@ -1,95 +1,117 @@
 from web_visualizer import app
-import sqlite3
 import random
 import urllib.request
 import json
 from flask import jsonify, request, g
-from web_visualizer.classes import Router, LandingPoint
-import csv
+from web_visualizer.classes import Router, LandingPoint, Point, Path
+from web_visualizer.database import Database
+from web_visualizer import db
+from web_visualizer.helpers import *
+import os
+from itertools import combinations
 
 # Constants
+IP_ADDRESSES_PATH = './web_visualizer/data/ip_addresses.sqlite3'
+LANDING_POINTS_PATH = '/Users/ethanweiner/Downloads/www.submarinecablemap.com-master/public/api/v2/landing-point'
+CABLES_PATH = '/Users/ethanweiner/Downloads/www.submarinecablemap.com-master/public/api/v2/cable'
 
-
-DATABASE_PATH = './web_visualizer/data/ip_addresses.sqlite3'
-LANDING_POINTS_DATA = './web_visualizer/data/landing_points.json'
-ROUTERS = []
-LANDING_POINTS = []
-
-# Data Definitions
 
 # Routers: Generates GeoJSON locations of _num_routers_ routers
+
+
 @app.route("/routers")
 def routers():
     # Randomly select ip addresses from table to represent the routers
     num_routers = request.args.get("num_routers")
 
-    ROUTERS = router_points(num_routers)
-    LANDING_POINTS = landing_points()
+    # Delete any existing routers
+    print(Router.query.first())
 
-    points = ROUTERS + LANDING_POINTS
+    if Router.query.first() != None:
+        Router.query.delete()
 
-    return jsonify(points)
+    # Generate and store routers in database
 
+    store_routers(num_routers)
 
-# DATABASE HELPERS
+    # Query this new set of points from the database
+    return jsonify(list(map(lambda point: point.toJson(), Point.query.all())))
 
-# get_db
-# Retrieves ip address database for usage
-def get_db():
-    db = getattr(g, '_database', None)
-    if db is None:
-        db = g._database = sqlite3.connect(DATABASE_PATH)
-        db.row_factory = dict_factory
-    return db
-
-
-# dict_factory
-# Converts the given _row_ from the to a dictionary
-def dict_factory(cursor, row):
-    d = {}
-    for idx, col in enumerate(cursor.description):
-        d[col[0]] = row[idx]
-    return d
-
-
-# query_db
-# Once created, queries the ip address database
-def query_db(query, args=(), one=False):
-    cur = get_db().execute(query, args)
-    rv = cur.fetchall()
-    cur.close()
-    return (rv[0] if rv else None) if one else rv
-
-# router_points : Number -> [List-of Router]
+# store_routers : Number -> [List-of Router]
 # Uses the ip_addresses database to generate a list of Routers, of size _num_routers_
-def router_points(num_routers):
+
+
+def store_routers(num_routers):
+    print("Storing routers...")
+    ip_addresses_db = Database(IP_ADDRESSES_PATH)
     routers = []
 
     # Change to insert num_routers as argument instead (to avoid database manipulation)
-    for ip in query_db('SELECT * FROM ip_addresses ORDER BY RANDOM() LIMIT ' + num_routers, one=False):
-        routers.append(Router(ip["latitude"], ip["longitude"], ip["continent_id"], ip["ip"]).jsonify())
-    
-    return routers
+    for ip in ip_addresses_db.query_db('SELECT * FROM ip_addresses ORDER BY RANDOM() LIMIT ?',
+                                       [num_routers]):
+        db.session.add(
+            Router(ip=ip["ip"], latitude=ip["latitude"], longitude=ip["longitude"],
+                   continent_code=ip["continent_id"]))
+
+    db.session.commit()
 
 
-# landing_points : _ -> [List-of LandingPoint]
-# Uses the data on oceanic cables to generate a list of LandingPoints
-def landing_points():
-    # Try loading from JSON file, and test speed
-    with open(LANDING_POINTS_DATA) as landing_points_file:
-        landing_points_data = json.load(landing_points_file)
+# TEMPORARY DATABASE FUNCTIONS
 
-    landing_points = []
+# store_paths
+# TEMPORARY FUNCTION: Used to initially store the paths into a table
+def store_paths():
+    print("Storing paths...")
 
-    for landing_point in landing_points_data["features"]:
-        landing_points.append(LandingPoint(landing_point["geometry"]["coordinates"][1], landing_point["geometry"]["coordinates"][0], landing_point["properties"]["id"]).jsonify())
+    for file in os.listdir(CABLES_PATH):
+        with open(CABLES_PATH + '/' + file) as cable_file:
+            try:
+                data = json.load(cable_file)
+                cable_paths = paths(data["landing_points"], data["id"])
+                for path in cable_paths:
+                    db.session.add(path)
+            except KeyError:
+                continue
+            except UnicodeDecodeError:
+                print(f"Improper JSON in {cable_file}")
+                continue
+    db.session.commit()
 
-    # Temporary solution: Just return the landing points themselves, without cable data
-    return landing_points
+
+# paths
+# Given the _landing_points_ and _slug_ associated with a cable, generate all the 2-way cable paths (as point id's) that a packet could take
+def paths(landing_points, slug):
+    point_ids = map(lambda landing_point: landing_point["id"], landing_points)
+    # Generate all 2-sized subsets of the landing points
+    point_combinations = combinations(point_ids, 2)
+    paths = []
+    for combination in point_combinations:
+        # Add the path and reverse of that path
+        paths.append(
+            Path(start_point_id=combination[0], end_point_id=combination[1], slug=slug))
+        paths.append(
+            Path(start_point_id=combination[1], end_point_id=combination[0], slug=slug))
+
+    return paths
 
 
-# Distance: Node Node -> Number
-# Determine the distance from _p1_ to _p2_
-# Research how to determine distance w/ latitude & longitude (just the hypotenuse of pythagorean theorem?)
-def distance(p1, p2):
-    return 0
+# store_landing_points
+# TEMPORARY FUNCTION: Used to initially store the landing points
+def store_landing_points():
+    print("Storing landing points...")
+    # Iterate through all landing point JSON files
+    for file in os.listdir(LANDING_POINTS_PATH):
+        if file == "all.json":
+            continue
+        with open(LANDING_POINTS_PATH + '/' + file) as landing_point_file:
+            data = json.load(landing_point_file)
+            try:
+                continent_code = parse_continent(data["name"])
+                landing_point = LandingPoint(latitude=data["latitude"], longitude=data["longitude"],
+                                             point_id=data["id"], continent_code=continent_code, type="landing_point")
+                db.session.add(landing_point)
+            # Disregard landing points with invalid countries
+            except KeyError:
+                continue
+
+    db.session.commit()

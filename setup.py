@@ -10,6 +10,7 @@ setup(
         'ipinfo',
         'flask_assets',
         'ipinfo',
-        'requests'
+        'requests',
+        'pycountry_convert'
     ]
 )
