@@ -27,3 +27,7 @@ var ROUTER_MARKERS = []
 const userPosition = {}
 const destinationPosition = {}
 const packetSymbol = {}
+
+// Info windows
+var clientInfo = {};
+var serverInfo = {};

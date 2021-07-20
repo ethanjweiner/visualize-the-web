@@ -1,4 +1,4 @@
-var map, infoWindow, userMarker, destinationMarker;
+var map, userMarker, destinationMarker;
 
 // initMap
 // Initializes the Google Maps API, displaying a static map
@@ -19,6 +19,7 @@ function initMap() {
         });
 
         // Create a home marker at the user's location
+        
         userMarker = new google.maps.Marker({
           position: userPosition,
           map,

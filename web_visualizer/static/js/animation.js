@@ -5,10 +5,44 @@
 // Using the _client_ & _server_ data retrieved upon the request, animates the routes on _map_
 
 async function animate(client_data, server_data, map) {
-  // Turn off gesture handling and zoom control
-  // map.set("gestureHandling", "none");
-  // map.set("zoomControl", false);
 
+  display_server(server_data, map);
+
+  serverInfo = new google.maps.InfoWindow({
+    content: ""
+  });
+
+  serverInfo.open({
+    anchor: destinationMarker,
+    map,
+    shouldFocus: false
+  });
+
+
+  const numPackets = $('input#num-packets').val();
+  
+  // Generate and animate routes in both directions
+  await animate_routes("request", numPackets, [], map, 0, client_data, server_data, numPackets);
+
+  clientInfo = new google.maps.InfoWindow({
+    content: ""
+  });
+
+  serverInfo.close();
+
+  clientInfo.open({
+    anchor: userMarker,
+    map,
+    shouldFocus: false
+  })
+
+
+  await animate_routes("response", numPackets, [], map, 0, client_data, server_data, numPackets);
+
+  clientInfo.close();
+}
+
+function display_server(server_data, map) {
   let destination = {
     "type": "router",
     "ip": server_data.ip_details.ip,
@@ -27,17 +61,79 @@ async function animate(client_data, server_data, map) {
   });
   // Add the marker to the map
   destinationMarker.setMap(map);
+}
 
-  const numPackets = $('input#num-packets').val()
-  
-  // Generate and animate routes in both directions
-  await animate_routes("request", numPackets, [], map);
-  await animate_routes("response", numPackets, [], map);
+// Update the info windows of client & server info such that they reflect the current state
+// Callled when any packet is received
+function update_client_info(client_data, server_data, packets_received, total_packets) {
+  const content = `
+  <div id="client-info-window" class="text-dark">
+    <p>Packets Received: &nbsp;${packets_received}/${total_packets}</p>
+    <h5 class="text-primary">Client Info</h5>
+    <ul>
+      <li class="text-dark">
+        IP: &nbsp;${client_data.ip_details.ip}
+      </li>
+      <li class="text-dark">
+        City: &nbsp;${client_data.ip_details.city}
+      </li>
+      <li class="text-dark">
+        Region: &nbsp;${client_data.ip_details.region}
+      </li>
+      <li class="text-dark">
+        Country: &nbsp;${client_data.ip_details.country}
+      </li>
+    </ul>
+    <h5 class="text-primary">Response Details</h5>
+    <ul>
+      <li class="text-dark">Return IP: &nbsp;${server_data.ip_details.ip}</li>
+      <li class="text-dark">Content Type: &nbsp;${server_data.response_details.content_type}</li>
+      <li class="text-dark">Status Code: &nbsp;${server_data.response_details.status_code}</li>
+      <li class="text-dark">Response URL: &nbsp;${server_data.response_details.response_url}</li>
+    </ul>
+  </div>
+`;
+  clientInfo.setContent(content);
+}
+
+function update_server_info(client_data, server_data, packets_received, total_packets) {
+  console.log(client_data, server_data);
+  const content = `
+  <div id="server-info-window" class="text-dark">
+    <p>Packets Received: &nbsp;${packets_received}/${total_packets}</p>
+    <h5 class="text-primary">Server Info</h5>
+    <ul>
+      <li class="text-dark">
+        IP: &nbsp;${server_data.ip_details.ip}
+      </li>
+      <li class="text-dark">
+        City: &nbsp;${server_data.ip_details.city}
+      </li>
+      <li class="text-dark">
+        Region: &nbsp;${server_data.ip_details.region}
+      </li>
+      <li class="text-dark">
+        Country: &nbsp;${server_data.ip_details.country}
+      </li>
+    </ul>
+    <h5 class="text-primary">Request Details</h5>
+    <ul>
+      <li class="text-dark">Return IP: &nbsp;${client_data.ip_details.ip}</li>
+      <li class="text-dark">Method: &nbsp;${client_data.request_details.request_method}</li>
+      <li class="text-dark">Request URL: &nbsp;${client_data.request_details.request_url}</li>
+    </ul>
+  </div>
+`;
+  serverInfo.setContent(content);
 }
 
 // aniamte_routes : Direction Integer Map -> _
 // Generates and animates all the routes in a particular _direction_
-async function animate_routes(direction, num_routes, lines, map) {
+async function animate_routes(direction, num_routes, lines, map, packet_number, client_data, server_data, total_packets) {
+  if (direction == "request")
+    update_server_info(client_data, server_data, packet_number, total_packets);
+  else
+    update_client_info(client_data, server_data, packet_number, total_packets)
   // Use natural # template to aid with asynchronous recursion
   if (num_routes <= 0) {
     setTimeout(() => {
@@ -46,6 +142,7 @@ async function animate_routes(direction, num_routes, lines, map) {
     }, 100);
     return;
   } else {
+
     return new Promise(function(resolve, reject) {
       $.getJSON(
         $SCRIPT_ROOT + "/routes", 
@@ -54,7 +151,7 @@ async function animate_routes(direction, num_routes, lines, map) {
           // First, animate the current route generated
           animate_route(route, map).then((route_lines) => {
             // Next animate the rest ouf the routes
-            animate_routes(direction, num_routes - 1, lines.concat(route_lines), map)
+            animate_routes(direction, num_routes - 1, lines.concat(route_lines), map, packet_number + 1, client_data, server_data, total_packets)
             // Finally, notify that the funciton is finished
               .then(resolve);
           })
