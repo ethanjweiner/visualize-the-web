@@ -26,3 +26,4 @@ var ROUTER_MARKERS = []
 // Client & server positions
 const userPosition = {}
 const destinationPosition = {}
+const packetSymbol = {}
