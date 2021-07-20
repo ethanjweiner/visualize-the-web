@@ -43,7 +43,7 @@ async function animate_routes(direction, num_routes, lines, map) {
     setTimeout(() => {
       clear_lines(lines);
       console.log("Cleared first routes")
-    }, 3000);
+    }, 100);
     return;
   } else {
     return new Promise(function(resolve, reject) {
@@ -69,7 +69,6 @@ async function animate_routes(direction, num_routes, lines, map) {
 // Animates _route_ on _map_ by drawing lines at the current speed of the slider
 async function animate_route(route, map) {
 
-  console.log(route)
   return new Promise(function(resolve, reject) {
     let lines = [];
     let blurred_lines = [];
@@ -80,7 +79,8 @@ async function animate_route(route, map) {
     // Animates the connection (either a line or Polyline) at _index_ of route
 
     const animate_connection = (index) => {
-      const speed = $('input#speed').val()
+      const speed = $('input#speed').val();
+      let line, blurred_line;
       // We have finished the route animation
       
       if (index == route.length - 1) {
@@ -118,15 +118,18 @@ async function animate_route(route, map) {
             ]
           }
           
-          // Draw the polylines
-          lines.push(draw_line(path, color, map, false));
-          blurred_lines.push(draw_line(path, color, map, true));
+          line = draw_line(path, color, map, speed, false);
+          blurred_line = draw_line(path, color, map, speed, true);
+          lines.push(line);
+          blurred_lines.push(blurred_line);
+
+          // After a short wait, animate the next connection
+          setTimeout(() => {
+            animate_connection(index+1);
+          }, 1000/speed)
         }
 
-        // After a short wait, animate the next connection
-        setTimeout(() => {
-          animate_connection(index+1);
-        }, 1000/speed)
+
       }
     }
     animate_connection(0);
@@ -137,21 +140,49 @@ async function animate_route(route, map) {
 
 // draw_line : Router Router Color Map Boolean -> Path
 // Draw a line on _map_ using a given _path_, dependent on if the line is _blurred_
-function draw_line(path, color, map, blurred) {
+function draw_line(path, color, map, speed, blurred) {
 
   const line = new google.maps.Polyline({
     path,
     geodesic: false,
     strokeColor: color,
     strokeOpacity: blurred ? 0.5 : 1.0,
-    strokeWeight: blurred ? 2 : 3
-  })
+    strokeWeight: blurred ? 2 : 3,
+  });
+
   if (blurred) {
     line.setMap(null);
   } else {
     line.setMap(map);
+    animate_packet(line, speed);
   }
   return line;
+}
+
+// Adjust the offset from 0 to 100% in 1000/speed
+function animate_packet(line, speed) {
+  line.set("icons", [
+    {
+      icon: packetSymbol,
+      offset: "0%"
+    }
+  ]);
+  // Need to lengthen intervals
+  let total_time = 1000/speed;
+  let time_per_interval = 25;
+  let num_intervals = total_time/time_per_interval;
+  let offset = 0;
+  const interval = window.setInterval(() => {
+    offset += 100/num_intervals;
+    const icons = line.get("icons");
+    icons[0].offset = offset + "%";
+    line.set("icons", icons);
+    if (offset >= 100) {
+      console.log("Cleared interval")
+      window.clearInterval(interval);
+      line.set("icons", []);
+    }
+  }, time_per_interval)
 }
 
 function draw_lines(lines, map) {
