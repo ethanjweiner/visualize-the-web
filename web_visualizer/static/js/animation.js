@@ -1,10 +1,22 @@
 // A Speed is an Integer, [1-100]
 // INTERPRETATION: A Speed of _speed_ represents of _speed_ iterations per second
 
+function stop_animation() {
+  ANIMATION_FLAG = false;
+  document.querySelector("#controller").classList.remove("d-none");
+  document.querySelector("#animation-options").classList.add("d-none");
+
+  
+}
+
 // animate : Data Data Map -> _
 // Using the _client_ & _server_ data retrieved upon the request, animates the routes on _map_
 
 async function animate(client_data, server_data, map) {
+  document.querySelector("#controller").classList.add("d-none");
+  document.querySelector("#animation-options").classList.remove("d-none");
+
+  ANIMATION_FLAG = true;
 
   display_server(server_data, map);
 
@@ -16,6 +28,14 @@ async function animate(client_data, server_data, map) {
     anchor: destinationMarker,
     map,
     shouldFocus: false
+  });
+
+  destinationMarker.addListener('click', () => {
+    serverInfo.open({
+      anchor: destinationMarker,
+      map,
+      shouldFocus: false
+    });
   });
 
 
@@ -36,10 +56,20 @@ async function animate(client_data, server_data, map) {
     shouldFocus: false
   })
 
+  userMarker.addListener('click', () => {
+    clientInfo.open({
+      anchor: destinationMarker,
+      map,
+      shouldFocus: false
+    });
+  });
+
 
   await animate_routes("response", numPackets, [], map, 0, client_data, server_data, numPackets);
 
   clientInfo.close();
+
+  stop_animation();
 }
 
 function display_server(server_data, map) {
@@ -72,24 +102,24 @@ function update_client_info(client_data, server_data, packets_received, total_pa
     <h5 class="text-primary">Client Info</h5>
     <ul>
       <li class="text-dark">
-        IP: &nbsp;${client_data.ip_details.ip}
+        <span class="text-dark" style="text-decoration: underline;">IP</span>: &nbsp;${client_data.ip_details.ip}
       </li>
       <li class="text-dark">
-        City: &nbsp;${client_data.ip_details.city}
+        <span class="text-dark" style="text-decoration: underline;">City</span>: &nbsp;${client_data.ip_details.city}
       </li>
       <li class="text-dark">
-        Region: &nbsp;${client_data.ip_details.region}
+        <span class="text-dark" style="text-decoration: underline;">Region</span>: &nbsp;${client_data.ip_details.region}
       </li>
       <li class="text-dark">
-        Country: &nbsp;${client_data.ip_details.country}
+        <span class="text-dark" style="text-decoration: underline;">Country</span>: &nbsp;${client_data.ip_details.country}
       </li>
     </ul>
     <h5 class="text-primary">Response Details</h5>
     <ul>
-      <li class="text-dark">Return IP: &nbsp;${server_data.ip_details.ip}</li>
-      <li class="text-dark">Content Type: &nbsp;${server_data.response_details.content_type}</li>
-      <li class="text-dark">Status Code: &nbsp;${server_data.response_details.status_code}</li>
-      <li class="text-dark">Response URL: &nbsp;${server_data.response_details.response_url}</li>
+      <li class="text-dark"><span class="text-dark" style="text-decoration: underline;">Return IP</span>: &nbsp;${server_data.ip_details.ip}</li>
+      <li class="text-dark"><span class="text-dark" style="text-decoration: underline;">Content Type</span>: &nbsp;${server_data.response_details.content_type}</li>
+      <li class="text-dark"><span class="text-dark" style="text-decoration: underline;">Status Code</span>: &nbsp;${server_data.response_details.status_code}</li>
+      <li class="text-dark"><span class="text-dark" style="text-decoration: underline;">Response URL</span>: &nbsp;${server_data.response_details.response_url}</li>
     </ul>
   </div>
 `;
@@ -104,23 +134,23 @@ function update_server_info(client_data, server_data, packets_received, total_pa
     <h5 class="text-primary">Server Info</h5>
     <ul>
       <li class="text-dark">
-        IP: &nbsp;${server_data.ip_details.ip}
+        <span class="text-dark" style="text-decoration: underline;">IP</span>: &nbsp;${server_data.ip_details.ip}
       </li>
       <li class="text-dark">
-        City: &nbsp;${server_data.ip_details.city}
+        <span class="text-dark" style="text-decoration: underline;">City</span>: &nbsp;${server_data.ip_details.city}
       </li>
       <li class="text-dark">
-        Region: &nbsp;${server_data.ip_details.region}
+        <span class="text-dark" style="text-decoration: underline;">Region</span>: &nbsp;${server_data.ip_details.region}
       </li>
       <li class="text-dark">
-        Country: &nbsp;${server_data.ip_details.country}
+        <span class="text-dark" style="text-decoration: underline;">Country</span>: &nbsp;${server_data.ip_details.country}
       </li>
     </ul>
     <h5 class="text-primary">Request Details</h5>
     <ul>
-      <li class="text-dark">Return IP: &nbsp;${client_data.ip_details.ip}</li>
-      <li class="text-dark">Method: &nbsp;${client_data.request_details.request_method}</li>
-      <li class="text-dark">Request URL: &nbsp;${client_data.request_details.request_url}</li>
+      <li class="text-dark"><span class="text-dark" style="text-decoration: underline;">Return IP</span>: &nbsp;${client_data.ip_details.ip}</li>
+      <li class="text-dark"><span class="text-dark" style="text-decoration: underline;">Method</span>: &nbsp;${client_data.request_details.request_method}</li>
+      <li class="text-dark"><span class="text-dark" style="text-decoration: underline;">Request URL</span>: &nbsp;${client_data.request_details.request_url}</li>
     </ul>
   </div>
 `;
@@ -148,13 +178,19 @@ async function animate_routes(direction, num_routes, lines, map, packet_number, 
         $SCRIPT_ROOT + "/routes", 
         { direction }, 
         function(route) {
-          // First, animate the current route generated
+          if (ANIMATION_FLAG) {
+                      // First, animate the current route generated
           animate_route(route, map).then((route_lines) => {
             // Next animate the rest ouf the routes
             animate_routes(direction, num_routes - 1, lines.concat(route_lines), map, packet_number + 1, client_data, server_data, total_packets)
             // Finally, notify that the funciton is finished
               .then(resolve);
-          })
+          });
+          } else {
+            clear_lines(lines);
+            resolve();
+          }
+
         }
       ); 
     });
@@ -221,15 +257,23 @@ async function animate_route(route, map) {
           blurred_lines.push(blurred_line);
 
           // After a short wait, animate the next connection
-          setTimeout(() => {
-            animate_connection(index+1);
-          }, 1000/speed)
+          if (ANIMATION_FLAG) {
+            setTimeout(() => {
+              animate_connection(index+1);
+            }, 1000/speed)
+          } else {
+        clear_lines(lines);
+            resolve(blurred_lines);
+          }
         }
 
 
       }
     }
-    animate_connection(0);
+    if (ANIMATION_FLAG)
+      animate_connection(0);
+    else
+      resolve([])
   })
 
 }
@@ -251,19 +295,20 @@ function draw_line(path, color, map, speed, blurred) {
     line.setMap(null);
   } else {
     line.setMap(map);
-    animate_packet(line, speed);
+    animate_packet(line, speed, path, map);
   }
   return line;
 }
 
 // Adjust the offset from 0 to 100% in 1000/speed
-function animate_packet(line, speed) {
+function animate_packet(line, speed, path, map) {
   line.set("icons", [
     {
       icon: packetSymbol,
       offset: "0%"
     }
   ]);
+
   // Need to lengthen intervals
   let total_time = 1000/speed;
   let time_per_interval = 25;
@@ -272,10 +317,14 @@ function animate_packet(line, speed) {
   const interval = window.setInterval(() => {
     offset += 100/num_intervals;
     const icons = line.get("icons");
+
     icons[0].offset = offset + "%";
     line.set("icons", icons);
+
+    if (AUTO_FOCUS)
+      set_center(path, offset, map);
+
     if (offset >= 100) {
-      console.log("Cleared interval")
       window.clearInterval(interval);
       line.set("icons", []);
     }
@@ -321,4 +370,19 @@ function blur_lines(lines, map) {
 
 function random_color() {
   return "#" + Math.floor(Math.random() * 16777215).toString(16)
+}
+
+// set_center : [List-of Coordinate] Number Map -> _
+// Sets the center position of the map, at _offset_% between the first and last coordinate of path
+function set_center(path, offset, map) {
+
+  const determine_middle = (a, b) => a + (b - a) * offset/100;
+
+  const start_coord = path[0];
+  const end_coord = path[path.length - 1];
+
+  const lat = determine_middle(start_coord.lat, end_coord.lat);
+  const lng = determine_middle(start_coord.lng, end_coord.lng);
+
+  map.setCenter(new google.maps.LatLng(lat, lng));
 }
