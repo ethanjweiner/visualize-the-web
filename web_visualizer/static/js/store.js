@@ -2,6 +2,9 @@
 // Constants
 const ZOOM = 3;
 const ROUTER_SIZE = 15;
+var ANIMATION_FLAG = true;
+var AUTO_FOCUS = false;
+
 const icons = {
   client: {
     icon: "static/images/client.png",
@@ -27,3 +30,8 @@ var ROUTER_MARKERS = []
 const userPosition = {}
 const destinationPosition = {}
 const packetSymbol = {}
+
+// Info windows
+var clientInfo = {};
+var serverInfo = {};
+

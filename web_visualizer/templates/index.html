@@ -11,120 +11,47 @@
       integrity="sha384-+0n0xVW2eSR5OomGNYDnhzAbDsOXxcvSN1TPprVMTNDbiYZCxYbOOl7+AMvyTG2x"
       crossorigin="anonymous"
     />
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined"
+      rel="stylesheet">
     <link
       rel="stylesheet"
       type="text/css"
       href="{{ url_for('static', filename='styles/styles.css') }}"
     />
+    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
     <!-- Determine the root path of our application -->
     <script type=text/javascript>
       $SCRIPT_ROOT = {{ request.script_root|tojson }};
     </script>
   </head>
   <body>
-    <div id="controller" class="mb-5">
-      <h1 class="text-center pt-3 d-none d-md-block">Web Visualizer</h1>
-      <hr class="d-none d-md-block" />
-      <p class="mx-2 mt-3 mt-md-0">
-        Use the form below to simulate an HTTP request:
-      </p>
-      <form action="/" method="GET" class="mx-2 p-2 rounded" id="request-form">
-        <label for="request-url" class="form-label">Request URL</label>
-        <input
-          type="text"
-          id="request-url"
-          name="request-url"
-          class="form-control"
-          style="font-family: arial; font-size: 14px"
-          value="{% if url %}{{url}}{% else %}https://{% endif %}"
-        />
-        <label class="form-label mt-2" for="request-action">Action</label>
-        <div class="form-check">
-          <input
-            type="radio"
-            class="form-check-input"
-            name="method-radios"
-            id="get-radio"
-            value="GET"
-            checked
-          />
-          <label for="get-radio" class="form-check-label">GET</label>
-        </div>
-        <div class="form-check">
-          <input
-            type="radio"
-            class="form-check-input"
-            name="method-radios"
-            value="POST"
-            id="post-radio"
-          />
-          <label for="post-radio" class="form-check-label">POST</label>
-        </div>
-        <div id="request-content" class="d-none">
-          <label for="request-content" class="form-label mt-2"
-            >JSON Content</label
-          >
-          <textarea
-            name="request-content"
-            rows="6"
-            class="form-control"
-            style="font-family: arial; font-size: 14px"
-          ></textarea>
-        </div>
+    
+    {% import 'controller.html' as controller %}
+    {% import 'animation_options.html' as animation_options %}
 
-        <div class="d-grid">
-          <input
-            type="submit"
-            class="btn btn-light mt-3"
-            value="Send Request"
-          />
-        </div>
-      </form>
-      <hr class="d-none d-md-block" />
-      <div id="options">
-        <h4 class="text-center">Options</h4>
-        <form class="mt-3 mx-2 p-2 rounded">
-          <div class="range">
-            <label for="num-routers" class="form-label">Number of Routers</label>
-            <input type="range" class="form-range" id="num-routers" value="10" min="5">
-            <output for="num-routers" id="num-routers-output">1000</output>
-          </div>
-          <div class="range mt-3">
-            <label for="num-packets" class="form-label">Number of Packets to Animate</label>
-            <input type="range" class="form-range" id="num-packets" value="5" min="1" max="25">
-            <output for="num-packets" id="num-packets-output">5</output>
-          </div>
-          <div class="range mt-3">
-            <label for="speed" class="form-label">Speed</label>
-            <input type="range" class="form-range" id="speed" value="1" min="1" max="20">
-            <p>Slow ---> Fast</p>
-          </div>
-        </form>
-      </div>
-      <hr class="d-none d-md-block">
-      <div id="add-marker">
-        <h4 class="text-center">Add Marker</h4>
-        <form class="mt-3 mx-2 p-2 rounded" id="coord-form">
-          <label for="latitude" class="form-label">Latitude</label>
-          <input type="text" placeholder="Latitude" id="latitude" name="latitude" class="form-control">
-          <label class="form-label" for="longitude"></label>
-          <input type="text" placeholder="Longitude" id="longitude" name="longitude" class="form-control">
-          <div class="d-grid">
-            <input
-              type="submit"
-              class="btn btn-light mt-3"
-              value="Add"
-            />
-          </div>
-        </form>
-      </div>
+    {{ controller.controller() }}
+    {{ animation_options.animation_options() }}
+
+    <!-- Errors -->
+    <div class="alert alert-danger alert-dismissible fade" role="alert">
+      <!-- Add the template into here -->
     </div>
+
+    <div id="legend">
+      <h4 class="text-center text-dark" style="text-decoration: underline;">Legend</h4>
+      <img src="../static/images/legend.png" height="185px" alt="legend">
+    </div>
+
 
     <div id="map"> 
       <!-- Replace with a loading screen -->
-      <h1 style="color: black" class="mx-auto text-center py-5">
-        Loading map....
-      </h1>
+      <div class="d-flex justify-content-center spinner-container align-middle"">
+        <div class="spinner-border text-danger d-inline-block  role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+      </div>
+
     </div>
 
     <a href='https://db-ip.com' id="db-ip">IP Geolocation by DB-IP</a>
