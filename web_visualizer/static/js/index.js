@@ -16,6 +16,7 @@ function initMap() {
           zoom: ZOOM,
           gestureHandling: "greedy",
           zoomControl: true,
+          streetViewControl: false,
         });
 
         // Create a home marker at the user's location
@@ -99,14 +100,20 @@ function initListeners(map) {
 
     marker.setMap(map);
   })
+
   
   // Listen for request
   $("#request-form").bind("submit", function (e) {
     e.preventDefault();
+    document.querySelector('.alert').classList.remove('show');
+    document.querySelector('input#speed').value = 1;
+
+
     // Remove the marker for the previous destination
     if (destinationMarker) destinationMarker.setMap(null);
     // Run the request in "/animate", and retrieve the details needed to animate
-    request_method = $("#get-radio").attr("checked") == "true" ? "GET" : "POST";
+    const request_method = document.querySelector("#get-radio").checked ? "GET" : "POST";
+    console.log(request_method);
   
     const request_data = {
       request_url: $('input[name="request-url"]').val(),
@@ -120,10 +127,22 @@ function initListeners(map) {
       $SCRIPT_ROOT + "/request",
       request_data,
       function (data) {
-        animate(data.client_data, data.server_data, map)
+        animate(data.client_data, data.server_data, map);
       }
-    );
+    ).fail(data => {
+      handleError(data)
+    })
   });
+
+  document.querySelector("#stop-animation").addEventListener('click', (e) => {
+    e.preventDefault();
+    stop_animation();
+  });
+
+  document.querySelector('#auto-focus').addEventListener('input', () => {
+    AUTO_FOCUS = !AUTO_FOCUS;
+  });
+
 }
 
 

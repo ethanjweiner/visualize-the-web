@@ -1,7 +1,7 @@
 from web_visualizer import app
 import socket
 import ipinfo
-from flask import jsonify, request, session
+from flask import jsonify, request, session, abort
 from web_visualizer.classes import Router, LandingPoint
 import requests
 from urllib.parse import urlparse
@@ -28,12 +28,6 @@ def http_request():
 
     server_data = simulate_http_request(
         client_data["request_details"]["request_url"], client_data["request_details"]["request_method"], client_data["request_details"]["request_content"])
-    # If there was an error processing the request, don't animate
-    if server_data == 1:
-        return "An error occured while sending the request"  # Render an error template
-    elif server_data == 2:
-        # Render an error template
-        return "An error occured while retrieving server information"
 
     # Store the client & server data in a session for usage
     session['client_data'] = client_data
@@ -49,20 +43,18 @@ def http_request():
 # - Server location
 def simulate_http_request(request_url, request_method, request_content=None):
     # Retrieve response content
+    try:
+        if request_method == "POST":
+            response = requests.post(request_url, data=request_content)
+        else:
+            response = requests.get(request_url)
+    except Exception:
+        abort(400, description="There was a problem with the request.")
 
-    if request_method == "POST":
-        response = requests.post(request_url, data=request_content)
-    else:
-        response = request.get(request_url)
-
-    # If the response is unsuccessful, signify an error
-    if response.status_code / 100 == 4 or response.status_code / 100 == 5:
-        return 1  # The response was faulty
-
-    ip_details = get_ip_details(url=response.url)
-
-    if ip_details == 1:
-        return 2  # Trouble retrieving the ip details
+    try:
+        ip_details = get_ip_details(url=response.url)
+    except Exception:
+        abort(404, description="The IP details for the provided URL could not be found. Please use a different URL.")
 
     return {
         "response_details": {
@@ -79,9 +71,6 @@ def simulate_http_request(request_url, request_method, request_content=None):
 def get_ip_details(url=None):
     if url:
         host_name = get_host_name(url)
-
-        if host_name == 1:
-            return 1  # The host was invalid
         ip = socket.gethostbyname(host_name)
     else:
         ip = requests.get('https://api.ipify.org').text
@@ -106,5 +95,5 @@ def get_host_name(url):
     try:
         parsed_url = urlparse(url)
     except NameError:
-        return 1
+        abort(404, description="The IP details for the provided URL could not be found. Please use a different URL.")
     return parsed_url.netloc

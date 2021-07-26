@@ -1,3 +1,14 @@
+// handleError : Data -> _
+// Upon a server-side error, display an alert modal
+function handleError(data) {
+  // Display alert
+  const alert = document.querySelector('.alert');
+  if (!alert.classList.contains('show'))
+    alert.classList.add('show');
+  // Update alert content
+  alert.innerHTML = data.responseText;
+}
+
 // loadCables : [Google Maps Map] -> _
 // Statically displays all oceanic cables on _map_
 function loadCables(map) {
