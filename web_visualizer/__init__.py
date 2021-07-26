@@ -2,7 +2,8 @@
 import os
 import jsmin
 import itertools
-from flask import Flask, request, render_template, g
+from flask import Flask, request, render_template, g, abort, redirect
+import flask
 from flask_assets import Environment, Bundle
 from flask_sqlalchemy import SQLAlchemy
 
@@ -20,6 +21,8 @@ app.config['SECRET_KEY'] = "vs&NwNhHHba$CPVCHWEmYj6X5RLqj@nWGD#3o%LHNW#k6cB@cD&7
 import web_visualizer.routes
 import web_visualizer.request
 import web_visualizer.routers
+import web_visualizer.error_handler
+
 
 # Bundling Javascript
 assets = Environment(app)
@@ -36,6 +39,11 @@ KEY = "AIzaSyCCl7-ieDSLRydryyQ1JaypI_dKuBhqfOc"
 @app.route("/")
 def index():
     return render_template("index.html", key=KEY)
+
+# Error
+@app.route("/error", methods=["GET", "POST"])
+def error():
+    return render_template("error.html", error=error)
 
 
 # close_connection
