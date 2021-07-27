@@ -192,9 +192,8 @@ async function animate_routes(direction, num_routes, lines, map, packet_number, 
           }
 
         }
-      ); 
+      ).fail(handleError);
     });
-
   }
 }
 

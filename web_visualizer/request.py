@@ -49,7 +49,7 @@ def simulate_http_request(request_url, request_method, request_content=None):
         else:
             response = requests.get(request_url)
     except Exception:
-        abort(400, description="There was a problem with the request.")
+        abort(404, description="The request could not be made to the provided URL. Please check your spelling.")
 
     try:
         ip_details = get_ip_details(url=response.url)
