@@ -129,9 +129,7 @@ function initListeners(map) {
       function (data) {
         animate(data.client_data, data.server_data, map);
       }
-    ).fail(data => {
-      handleError(data)
-    })
+    ).fail(handleError);
   });
 
   document.querySelector("#stop-animation").addEventListener('click', (e) => {

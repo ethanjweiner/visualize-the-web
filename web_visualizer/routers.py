@@ -24,15 +24,15 @@ def routers():
     # Randomly select ip addresses from table to represent the routers
     num_routers = request.args.get("num_routers")
 
-    # Delete any existing routers
-    print(Router.query.first())
-
     if Router.query.first() != None:
         Router.query.delete()
 
     # Generate and store routers in database
-
-    store_routers(num_routers)
+    try:
+        store_routers(num_routers)
+    except Exception:
+        abort(
+            500, description="There was a problem generating the routers. Please refresh.")
 
     # Query this new set of points from the database
     return jsonify(list(map(lambda point: point.toJson(), Point.query.all())))
@@ -42,7 +42,7 @@ def routers():
 
 
 def store_routers(num_routers):
-    print("Storing routers...")
+
     ip_addresses_db = Database(IP_ADDRESSES_PATH)
     routers = []
 
@@ -98,7 +98,6 @@ def paths(landing_points, slug):
 # store_landing_points
 # TEMPORARY FUNCTION: Used to initially store the landing points
 def store_landing_points():
-    print("Storing landing points...")
     # Iterate through all landing point JSON files
     for file in os.listdir(LANDING_POINTS_PATH):
         if file == "all.json":
