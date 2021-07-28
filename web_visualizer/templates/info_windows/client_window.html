@@ -1,0 +1,25 @@
+<div id="client-info-window" class="text-dark">
+    <p>Packets Received: &nbsp;${packets_received}/${total_packets}</p>
+    <h5 class="text-primary">Client Info</h5>
+    <ul>
+      <li class="text-dark">
+        <span class="text-dark" style="text-decoration: underline;">IP</span>: &nbsp;${client_data.ip_details.ip}
+      </li>
+      <li class="text-dark">
+        <span class="text-dark" style="text-decoration: underline;">City</span>: &nbsp;${client_data.ip_details.city}
+      </li>
+      <li class="text-dark">
+        <span class="text-dark" style="text-decoration: underline;">Region</span>: &nbsp;${client_data.ip_details.region}
+      </li>
+      <li class="text-dark">
+        <span class="text-dark" style="text-decoration: underline;">Country</span>: &nbsp;${client_data.ip_details.country}
+      </li>
+    </ul>
+    <h5 class="text-primary">Response Details</h5>
+    <ul>
+      <li class="text-dark"><span class="text-dark" style="text-decoration: underline;">Return IP</span>: &nbsp;${server_data.ip_details.ip}</li>
+      <li class="text-dark"><span class="text-dark" style="text-decoration: underline;">Content Type</span>: &nbsp;${server_data.response_details.content_type}</li>
+      <li class="text-dark"><span class="text-dark" style="text-decoration: underline;">Status Code</span>: &nbsp;${server_data.response_details.status_code}</li>
+      <li class="text-dark"><span class="text-dark" style="text-decoration: underline;">Response URL</span>: &nbsp;${server_data.response_details.response_url}</li>
+    </ul>
+  </div>
