@@ -27,7 +27,7 @@ import web_visualizer.error_handler
 # Bundling Javascript
 assets = Environment(app)
 # Bundle javascript files into minified "bundle.js"
-js = Bundle('js/jquery.min.js', 'js/store.js', 'js/animation.js', 'js/helpers.js', 'js/index.js',
+js = Bundle('js/jquery.min.js', 'js/globals.js', 'js/animation.js', 'js/helpers.js', 'js/index.js',
             filters='jsmin', output='bundle.js')
 assets.register('js_all', js)
 
@@ -44,6 +44,18 @@ def index():
 @app.route("/error", methods=["GET", "POST"])
 def error():
     return render_template("error.html", error=error)
+
+# InfoWindow: Provides an HTML template for an info window
+# Creates a server window upon requests, & client window upon responses
+@app.route("/info-window")
+def info_window():
+    direction = flask.request.args.get("direction")
+    data = flask.requst.args.get("data")
+
+    if direction == "request":
+        return render_template("server_window.html", total_packets=data.total_packets, packets_received=data.packets_received, client_data=data.client_data, server_data=data.server_data)
+    else:
+        return render_template("client_window.html", total_packets=data.total_packets, packets_received=data.packets_received, client_data=data.client_data, server_data=data.server_data)
 
 
 # close_connection

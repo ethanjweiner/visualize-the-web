@@ -1,0 +1,24 @@
+<div id="server-info-window" class="text-dark">
+    <p>Packets Received: &nbsp;{{packets_received}}/{{total_packets}}</p>
+    <h5 class="text-primary">Server Info</h5>
+    <ul>
+      <li class="text-dark">
+        <span class="text-dark" style="text-decoration: underline;">IP</span>: &nbsp;{{server_data.ip_details.ip}}
+      </li>
+      <li class="text-dark">
+        <span class="text-dark" style="text-decoration: underline;">City</span>: &nbsp;{{server_data.ip_details.city}}
+      </li>
+      <li class="text-dark">
+        <span class="text-dark" style="text-decoration: underline;">Region</span>: &nbsp;{{server_data.ip_details.region}}
+      </li>
+      <li class="text-dark">
+        <span class="text-dark" style="text-decoration: underline;">Country</span>: &nbsp;{{server_data.ip_details.country}}
+      </li>
+    </ul>
+    <h5 class="text-primary">Request Details</h5>
+    <ul>
+      <li class="text-dark"><span class="text-dark" style="text-decoration: underline;">Return IP</span>: &nbsp;{{client_data.ip_details.ip}}</li>
+      <li class="text-dark"><span class="text-dark" style="text-decoration: underline;">Method</span>: &nbsp;{{client_data.request_details.request_method}}</li>
+      <li class="text-dark"><span class="text-dark" style="text-decoration: underline;">Request URL</span>: &nbsp;{{client_data.request_details.request_url}}</li>
+    </ul>
+  </div>

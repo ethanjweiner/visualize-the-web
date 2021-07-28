@@ -1,9 +1,7 @@
-var map, userMarker, destinationMarker;
-
 // initMap
 // Initializes the Google Maps API, displaying a static map
 function initMap() {
-  // If rowser supports geolocation
+  // If browser supports geolocation
   if (navigator.geolocation) {
     // Pan and mark user's location on load
     navigator.geolocation.getCurrentPosition(
@@ -19,8 +17,7 @@ function initMap() {
           streetViewControl: false,
         });
 
-        // Create a home marker at the user's location
-        
+        // Create a marker at the user's location
         userMarker = new google.maps.Marker({
           position: userPosition,
           map,
@@ -28,48 +25,57 @@ function initMap() {
           title: "User location",
         });
 
-        // Packet symbol
-        packetSymbol.strokeColor = "#000"
-        packetSymbol.path = "M2.941 8c-2.941 0-1.47.779 0 1.974l22.059 16.789 22.059-16.737c1.472-1.195 2.941-2.026 0-2.026h-44.118zm-2.941 3.946v24.728c0 1.455 1.488 3.326 2.665 3.326h44.67c1.178 0 2.665-1.871 2.665-3.326v-24.728l-25 19.075-25-19.075z"
-        packetSymbol.rotation = 180;
-        packetSymbol.anchor = new google.maps.Point(25, 20);
-        packetSymbol.scale = .5;
-        packetSymbol.fillColor = "#eddfab";
-        packetSymbol.fillOpacity = 1;
+
+        // Set the packet symbol
+        packetSymbol = {
+          strokeColor: "#000",
+          path: PACKET_PATH,
+          rotation: 180,
+          anchor: new google.maps.Point(25, 20),
+          scale: .5,
+          fillColor: "#eddfab",
+          fillOpacity: 1
+        }
 
         // Load and display cables/routers
         loadCables(map);
         updateRouters(map, INITIAL_NUM_ROUTERS);
 
+        // Listen for any changes
         initListeners(map);
       },
       () => {
-        handleLocationError(true, infoWindow, map.getCenter());
+        handleError({
+          code: 500,
+          name: "Geolocation error",
+          description: "The Geolocation Service failed."
+        })
       }
     );
 
   // Browser doesn't supoprt geolocation
   } else {
-    handleLocationError(false, infoWindow, map.getCenter());
+    handleError({
+      code: 500,
+      name: "Geolocation error",
+      description: "Your browser doesn't support Geolocation."
+    })
   }
 }
 
 // Event listeners
-
 function initListeners(map) {
   // Update lat/lng
   map.addListener('mousemove', (mapsMouseEvent) => {
     document.querySelector("#coordinates").innerHTML = `
-      Latitude: ${mapsMouseEvent.latLng.toJSON().lat}<br>
-      Longitude: ${mapsMouseEvent.latLng.toJSON().lng}
+      Latitude: ${mapsMouseEvent.latLng.toJSON().lat.toFixed(3)}<br>
+      Longitude: ${mapsMouseEvent.latLng.toJSON().lng.toFixed(3)}
     `;
   })
   
   // Sliders
   document.querySelector("#num-routers").addEventListener('input', (e) => {
-    // Multiply the slider value by 100
     let num_routers = e.target.value * 100;
-    // Update the output element
     document.querySelector("#num-routers-output").value = num_routers;
   });
   
@@ -78,11 +84,9 @@ function initListeners(map) {
     deleteRouterMarkers();
     updateRouters(map, num_routers)
   })
-  // Update the # of routers upon sliding
+
   document.querySelector("#num-packets").addEventListener('input', (e) => {
-    // Multiply the slider value by 100
     let num_packets = e.target.value;
-    // Update the output element
     document.querySelector("#num-packets-output").value = num_packets;
   });
   
@@ -108,16 +112,12 @@ function initListeners(map) {
     document.querySelector('.alert').classList.remove('show');
     document.querySelector('input#speed').value = 1;
 
-
     // Remove the marker for the previous destination
     if (destinationMarker) destinationMarker.setMap(null);
-    // Run the request in "/animate", and retrieve the details needed to animate
-    const request_method = document.querySelector("#get-radio").checked ? "GET" : "POST";
-    console.log(request_method);
   
     const request_data = {
       request_url: $('input[name="request-url"]').val(),
-      request_method,
+      request_method : document.querySelector("#get-radio").checked ? "GET" : "POST",
       request_content: $('textarea[name="request-content"]').val(),
       latitude: userPosition.lat,
       longitude: userPosition.lng
@@ -138,18 +138,7 @@ function initListeners(map) {
   });
 
   document.querySelector('#auto-focus').addEventListener('input', () => {
-    AUTO_FOCUS = !AUTO_FOCUS;
+    auto_focus = !auto_focus;
   });
 
-}
-
-
-function handleLocationError(browserHasGeolocation, infoWindow, pos) {
-  infoWindow.setPosition(pos);
-  infoWindow.setContent(
-    browserHasGeolocation
-      ? "Error: The Geolocation service failed."
-      : "Error: Your browser doesn't support geolocation."
-  );
-  infoWindow.open(map);
 }
