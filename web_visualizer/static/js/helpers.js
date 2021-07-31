@@ -1,13 +1,13 @@
 // timeout
-// Create a timeout that is waited on to resolve
-
+// Create a timeout that waits _ms_ to resolve
 async function timeout(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 // handleError : Data -> _
-// Upon a server-side error, display an alert modal
+// Upon an error with _data_, display an alert modal
 function handleError(data) {
+  stop_animation();
   // Display alert
   const alert = document.querySelector('.alert');
   if (!alert.classList.contains('show'))
@@ -30,104 +30,7 @@ function handleError(data) {
   }
 }
 
-// loadCables : [Google Maps Map] -> _
-// Statically displays all oceanic cables on _map_
-function loadCables(map) {
-  // Load and display fiber optic cable GeoJSON data
-  map.data.loadGeoJson(oceanicCables);
-
-  // Style the oceanic wires to be grey
-  map.data.setStyle({
-    strokeWeight: 1,
-    strokeColor: "rgba(1, 1, 1, .2)",
-  });
-}
-
-// generateMarkerContent
-// Produces the content that will be contained in the animated InfoMarker representing the request or response
-function generateMarkerContent() {}
-
-// updateRouters : [Google Maps Map] Number -> _
-// Generates and displays _num_routers_ markers on _map_ representing routers
-function updateRouters(map, num_routers) {
-  // Retrieves the router locations for a particular # of routers
-  $.getJSON(
-    $SCRIPT_ROOT + "/routers",
-    { num_routers },
-    function (routers) {
-      displayRouters(map, routers);
-    }
-  );
-}
-
-// Displaying the routers
-
-// displayRouters : [Google Maps Map] [List-of Routers] -> _
-// Superimposes router icons on _map_ at the locations specified by _coordinates_
-function displayRouters(map, routers) {
-
-  const routerMarkerImage = new google.maps.MarkerImage(
-    icons["router"].icon,
-    new google.maps.Size(15,15),
-    null,
-    null,
-    new google.maps.Size(15,15)
-  );
-  
-  const landingPointMarkerImage = new google.maps.MarkerImage(
-    icons["landingPoint"].icon,
-    new google.maps.Size(15,15),
-    null,
-    null,
-    new google.maps.Size(15,15)
-  );
-
-
-  routers.forEach(router => {
-    let image = router.type == 'router' ? routerMarkerImage : landingPointMarkerImage;
-    displayRouter(map, router, image);
-  });
-
-}
-
-// displayRouter : [Google Maps Map] Router Image -> _
-// Displays a singular _router_ on the map, whose icon is dependent on the type of router
-function displayRouter(map, router, icon) {
-    // Create a Google Maps Coordinate for that router
-    const coordinate = new google.maps.LatLng(router.latitude, router.longitude)
-
-    // Display a marker at that coordinate
-    // Save the router in an array, in case it is used later in the animation
-    router_markers.push(new google.maps.Marker({
-      position: coordinate,
-      map,
-      icon
-    }));
-}
-
-// Deleting the routers
-
-function deleteRouterMarkers() {
-  clearRouterMarkers();
-  router_markers = [];
-}
-
-
-function clearRouterMarkers() {
-  setMapOnAll(null);
-}
-
-function setMapOnAll(map) {
-  for (let i = 0; i < router_markers.length; i++) {
-    router_markers[i].setMap(map);
-  }
-}
-
-function showRouterMarkers() {
-  setMapOnAll(map);
-}
-
-// Additional helpers
+// Radios
 
 const getRadio = document.querySelector("#get-radio");
 const postRadio = document.querySelector("#post-radio");
@@ -146,7 +49,7 @@ function toggleMethod() {
   else body.classList.add("d-none");
 }
 
-// init_info_window
+// init_info_window : Marker -> _
 // Create an info window anchored at _anchor_
 function init_info_window(anchor) {
   var infoWindow = new google.maps.InfoWindow({
@@ -170,6 +73,8 @@ function init_info_window(anchor) {
   return infoWindow
 }
 
+// random_color : _ -> Color
+// Generate a random hex color
 function random_color() {
   return "#" + Math.floor(Math.random() * 16777215).toString(16)
 }
@@ -187,4 +92,99 @@ function set_center(path, offset) {
   const lng = determine_middle(start_coord.lng, end_coord.lng);
 
   map.setCenter(new google.maps.LatLng(lat, lng));
+}
+
+function start_animation() {
+  document.querySelector("#controller").classList.add("d-none");
+  document.querySelector("#animation-options").classList.remove("d-none");
+  animation_flag = true;
+}
+
+function stop_animation() {
+  animation_flag = false;
+  document.querySelector("#controller").classList.remove("d-none");
+  document.querySelector("#animation-options").classList.add("d-none");
+}
+
+
+// EVENT LISTENERS
+// Initializes all event listeners (once the map is loaded)
+function initListeners() {
+  // Update lat/lng
+  map.addListener('mousemove', (mapsMouseEvent) => {
+    document.querySelector("#coordinates").innerHTML = `
+      Latitude: ${mapsMouseEvent.latLng.toJSON().lat.toFixed(3)}<br>
+      Longitude: ${mapsMouseEvent.latLng.toJSON().lng.toFixed(3)}
+    `;
+  })
+  
+  // Sliders
+  document.querySelector("#num-routers").addEventListener('input', (e) => {
+    let num_routers = e.target.value * 100;
+    document.querySelector("#num-routers-output").value = num_routers;
+  });
+  
+  document.querySelector("#num-routers").addEventListener('mouseup', (e) => {
+    let num_routers = e.target.value * 100;
+    points.delete_points().generate_points(num_routers);
+  })
+
+  document.querySelector("#num-packets").addEventListener('input', (e) => {
+    let num_packets = e.target.value;
+    document.querySelector("#num-packets-output").value = num_packets;
+  });
+  
+  // Coordinate form  
+  $('#coord-form').bind("submit", function(e) {
+    e.preventDefault()
+
+    const latitude = parseFloat($('input[name="latitude"]').val())
+    const longitude = parseFloat($('input[name="longitude"]').val())
+
+    const marker = new google.maps.Marker({
+      position: { lat: latitude, lng: longitude },
+      map
+    })
+
+    marker.setMap(map);
+  })
+
+  
+  // Listen for request
+  $("#request-form").bind("submit", function (e) {
+    e.preventDefault();
+    document.querySelector('.alert').classList.remove('show');
+    document.querySelector('input#speed').value = 1;
+
+    // Remove the marker for the previous destination
+    if (destinationMarker) destinationMarker.setMap(null);
+  
+    const request_details = {
+      request_url: $('input[name="request-url"]').val(),
+      request_method : document.querySelector("#get-radio").checked ? "GET" : "POST",
+      request_content: $('textarea[name="request-content"]').val(),
+      latitude: userPosition.lat,
+      longitude: userPosition.lng
+    };
+  
+    start_animation();
+
+    $.post(
+      $SCRIPT_ROOT + "/request",
+      { request_details: JSON.stringify(request_details) },
+      function (data) {
+        animate(data.client_data, data.server_data, map);
+      }
+    ).fail(handleError);
+  });
+
+  document.querySelector("#stop-animation").addEventListener('click', (e) => {
+    e.preventDefault();
+    stop_animation();
+  });
+
+  document.querySelector('#auto-focus').addEventListener('input', () => {
+    auto_focus = !auto_focus;
+  });
+
 }
