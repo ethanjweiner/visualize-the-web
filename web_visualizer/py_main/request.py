@@ -1,46 +1,40 @@
 from web_visualizer import app
+from web_visualizer.py_main.classes import *
+from web_visualizer.py_auxiliary.helpers import get_continent
+from web_visualizer.py_auxiliary.config import IP_INFO_ACCESS_TOKEN
+
+from flask import jsonify, request, session, abort
+
 import socket
 import ipinfo
-from flask import jsonify, request, session, abort
-from web_visualizer.classes import Router, LandingPoint
 import requests
+import json
 from urllib.parse import urlparse
-from web_visualizer.helpers import get_continent
-
-IP_INFO_ACCESS_TOKEN = '798b7b7ebf8444'
 
 
-@app.route("/request")
+@app.route("/request", methods=["POST"])
 def http_request():
     # 1. Run the AJAX request, & retrieve response data
-    ip_details = get_ip_details()
+    client_ip_details = get_ip_details()
 
     client_data = {
-        "request_details": {
-            "request_url": request.args.get("request_url"),
-            "request_method": request.args.get("request_method"),
-            "request_content": request.args.get("request_content"),
-            "latitude": request.args.get("latitude"),
-            "longitude": request.args.get("longitude")
-        },
-        "ip_details": ip_details
+        "request_details": json.loads(request.form.get("request_details")),
+        "ip_details": client_ip_details
     }
 
     server_data = simulate_http_request(
         client_data["request_details"]["request_url"], client_data["request_details"]["request_method"], client_data["request_details"]["request_content"])
 
-    # Store the client & server data in a session for usage
+    # Store the client & server data in a session for routing
     session['client_data'] = client_data
     session['server_data'] = server_data
+
     # Send client and server data back to the browser & the next route
     return jsonify(client_data=client_data, server_data=server_data)
 
 
 # simulate_http_request
 # Simulates an HTTP request, & subsequently retrieves information about the server and its response
-# - Response content
-# - Server ip
-# - Server location
 def simulate_http_request(request_url, request_method, request_content=None):
     # Retrieve response content
     try:
@@ -67,7 +61,7 @@ def simulate_http_request(request_url, request_method, request_content=None):
 
 
 # get_ip_details : [Maybe String] -> IP Details
-# Retrieve the ip-related details associated with a particular _url_ or the local ip address
+# Retrieves the ip-related details associated with a particular _url_ or the local ip address
 def get_ip_details(url=None):
     if url:
         host_name = get_host_name(url)
