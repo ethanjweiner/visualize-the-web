@@ -1,9 +1,9 @@
 from web_visualizer import app
-from flask import jsonify, request, session, abort
-from web_visualizer.classes import Point, Router, LandingPoint
-from web_visualizer.helpers import *
+from web_visualizer.py_main.classes import Point, Router, LandingPoint
+from web_visualizer.py_auxiliary.helpers import *
 
-# Note
+from flask import jsonify, request, session, abort
+
 
 # A Route is a [List-of X] where X can be a:
 # - Router
@@ -11,7 +11,7 @@ from web_visualizer.helpers import *
 # - Cable
 
 
-@app.route("/routes")
+@app.route("/route")
 def routes():
     direction = request.args.get("direction")
 
@@ -27,19 +27,26 @@ def routes():
 
     # Dynamically set radius increment based on distance
     # Wider radius ==> More options for routing
-    radius_increment = distance(client_router, server_router) / 15
+    starting_increment = starting_radius(client_router, server_router)
 
     route = False
 
     while not route:
         if direction == "request":
             route = client_router.route(
-                server_router, routers, radius_increment)
+                server_router, routers, starting_increment)
         else:
             route = server_router.route(
-                client_router, routers, radius_increment)
+                client_router, routers, starting_increment)
 
     if len(route):
         return jsonify(list(map(lambda node: node.toJson(), route)))
     else:
         abort(500, description="No route could be found to the location of the provided domain. Please try again with new routers or a different URL.")
+
+
+def starting_radius(client_router, server_router):
+    candidate = distance(client_router, server_router) / 15
+    if candidate > 0.5:
+        return candidate
+    return 0.5
