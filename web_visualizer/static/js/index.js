@@ -1,5 +1,6 @@
 // initMap
-// Initializes the Google Maps API, displaying a static map
+// Initializes the Google Maps API, displaying a static map with a marker for the user, oceanic cables, and routers
+// Initializes all event listeners pertaining to the map
 function initMap() {
   // If browser supports geolocation
   if (navigator.geolocation) {
@@ -37,12 +38,30 @@ function initMap() {
           fillOpacity: 1
         }
 
-        // Load and display cables/routers
-        loadCables(map);
-        updateRouters(map, INITIAL_NUM_ROUTERS);
+        routerMarkerImage = new google.maps.MarkerImage(
+          icons["router"].icon,
+          new google.maps.Size(15,15),
+          null,
+          null,
+          new google.maps.Size(15,15)
+        );
 
-        // Listen for any changes
-        initListeners(map);
+        landingPointMarkerImage = new google.maps.MarkerImage(
+          icons["landingPoint"].icon,
+          new google.maps.Size(15,15),
+          null,
+          null,
+          new google.maps.Size(15,15)
+        );
+
+        // Load and display cables/routers
+        loadCables();
+
+        points = new Points(INITIAL_NUM_ROUTERS);
+        points.generate_points();
+
+        // Initialize all event listeners
+        initListeners();
       },
       () => {
         handleError({
@@ -63,82 +82,3 @@ function initMap() {
   }
 }
 
-// Event listeners
-function initListeners(map) {
-  // Update lat/lng
-  map.addListener('mousemove', (mapsMouseEvent) => {
-    document.querySelector("#coordinates").innerHTML = `
-      Latitude: ${mapsMouseEvent.latLng.toJSON().lat.toFixed(3)}<br>
-      Longitude: ${mapsMouseEvent.latLng.toJSON().lng.toFixed(3)}
-    `;
-  })
-  
-  // Sliders
-  document.querySelector("#num-routers").addEventListener('input', (e) => {
-    let num_routers = e.target.value * 100;
-    document.querySelector("#num-routers-output").value = num_routers;
-  });
-  
-  document.querySelector("#num-routers").addEventListener('mouseup', (e) => {
-    let num_routers = e.target.value * 100;
-    deleteRouterMarkers();
-    updateRouters(map, num_routers)
-  })
-
-  document.querySelector("#num-packets").addEventListener('input', (e) => {
-    let num_packets = e.target.value;
-    document.querySelector("#num-packets-output").value = num_packets;
-  });
-  
-  // Coordinate form  
-  $('#coord-form').bind("submit", function(e) {
-    e.preventDefault()
-
-    const latitude = parseFloat($('input[name="latitude"]').val())
-    const longitude = parseFloat($('input[name="longitude"]').val())
-
-    const marker = new google.maps.Marker({
-      position: { lat: latitude, lng: longitude },
-      map
-    })
-
-    marker.setMap(map);
-  })
-
-  
-  // Listen for request
-  $("#request-form").bind("submit", function (e) {
-    e.preventDefault();
-    document.querySelector('.alert').classList.remove('show');
-    document.querySelector('input#speed').value = 1;
-
-    // Remove the marker for the previous destination
-    if (destinationMarker) destinationMarker.setMap(null);
-  
-    const request_data = {
-      request_url: $('input[name="request-url"]').val(),
-      request_method : document.querySelector("#get-radio").checked ? "GET" : "POST",
-      request_content: $('textarea[name="request-content"]').val(),
-      latitude: userPosition.lat,
-      longitude: userPosition.lng
-    };
-  
-    $.getJSON(
-      $SCRIPT_ROOT + "/request",
-      request_data,
-      function (data) {
-        animate(data.client_data, data.server_data, map);
-      }
-    ).fail(handleError);
-  });
-
-  document.querySelector("#stop-animation").addEventListener('click', (e) => {
-    e.preventDefault();
-    stop_animation();
-  });
-
-  document.querySelector('#auto-focus').addEventListener('input', () => {
-    auto_focus = !auto_focus;
-  });
-
-}

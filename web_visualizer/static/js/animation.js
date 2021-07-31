@@ -1,10 +1,6 @@
-// A Speed is an Integer, [1-20]
-// INTERPRETATION: A Speed of _speed_ represents of _speed_ iterations per second
-
-// animate : Data Data Map -> _
+// animate : Dict Dict Map -> _
 // Using the _client_ & _server_ data retrieved upon the request, animates the routes on _map_
 async function animate(client_data, server_data) {
-  start_animation();
 
   display_server(server_data);
 
@@ -18,64 +14,78 @@ async function animate(client_data, server_data) {
   stop_animation();
 }
 
-// RequestAnimation
-// Usage: Animate either the request or response between a client & server
+
 class RouteAnimation {
   constructor(client_data, server_data, num_routes) {
     this.client_data = client_data;
     this.server_data = server_data;
     this.num_routes = num_routes;
   }
+  // animate : Direction -> _
+  // Provide a one-way animation of an HTTP-request
   async animate(direction) {
     // Initialize the content of the info window
     if (direction == "request")
-      this.infoWindow = init_info_window(destinationMarker);
+      this.infoWindow = await init_info_window(destinationMarker);
     else
-      this.infoWindow = init_info_window(userMarker);
+      this.infoWindow = await init_info_window(userMarker);
 
     // Animation logic
-    await this.animate_routes(direction)
+    await this.animate_routes(direction);
 
     // Close info window
     this.infoWindow.close()
   }
+  // update_info_window : Direction Number -> _
+  // Update the info window in realtime to match the request on its current packet _packet_number_
+  async update_info_window(direction, packet_number) {
+    return new Promise(resolve => {
+      $.post({
+        url: $SCRIPT_ROOT + '/info-window',
+        data: {
+          direction,
+          total_packets: this.num_routes,
+          packets_received: packet_number,
+          client_data: JSON.stringify(this.client_data),
+          server_data: JSON.stringify(this.server_data),
+        },
+        success: (template) => {
+          this.infoWindow.setContent(template);
+          resolve();
+        }
+      });
+    })
 
-  update_info_window(direction, packet_number) {
-    let content;
-    if (direction == "request") {
-      // Retrieve the server window template
-      content = ""
-    } else {
-      // Retrieve the client window template
-      content = ""
-    }
-    this.infoWindow.setContent(content);
+
   }
-  // Initialize the animation of routes
+  
+  // animate_routes : Direction -> _
+  // Initialize the animation of routes in _direction_
   async animate_routes(direction) {
-    await this.animate_routes_helper(direction, this.num_routes, [])
+    await this.animate_routes_accum(direction, this.num_routes, []);
+
   }
+
+  // animate_routes_accum : Direction Number [List-of Coordinate] -> Boolean
+  // ACCUMULATOR: _num_routes_ specifies the number of routes left to animate
   // ACCUMULATOR: _lines_ contains all lines drawn as part of the routes so far
-  async animate_routes_helper(direction, num_routes, lines) {
+  async animate_routes_accum(direction, num_routes, lines) {
     let packet_number = this.num_routes - num_routes; 
-    this.update_info_window(direction, packet_number);
+    await this.update_info_window(direction, packet_number);
 
     if (num_routes == 0) {
-      setTimeout(() => {
-        console.log(lines);
-        clear_lines(lines);
-      }, 100);
+      await timeout(100);
+      clear_lines(lines);
       return;
     } else {
-      // Return a promise to evoke asynchronous functionality
-      return new Promise((resolve, reject) => {
+      return new Promise(resolve => {
         $.getJSON(
-          $SCRIPT_ROOT + "/routes",
+          $SCRIPT_ROOT + "/route",
           { direction },
           (route) => {
             if (animation_flag) {
               this.animate_route(route).then((route_lines) => {
-                this.animate_routes_helper(direction, num_routes - 1, lines.concat(route_lines))
+                this.animate_routes_accum(direction, num_routes - 1, lines.concat(route_lines))
                   .then(resolve)
               })
             } else {
@@ -87,6 +97,8 @@ class RouteAnimation {
       });
     }
   }
+  // animate_route : Route -> _
+  // Draws the lines representing one particular _route_ (of Points and Cables)
   async animate_route(route) {
 
     let lines = [];
@@ -95,9 +107,11 @@ class RouteAnimation {
 
     const animate_connection = async (index) => {
 
+      // cable_path : Cable -> [List-of Coordinate]
+      // Creates a path of the coordinates associated with _cable_
       const cable_path = (cable) => {
         // Use the cable nodes
-        if (cable.nodes.length)
+        if (cable.nodes)
           return cable.nodes.map(node => { return { lat: node[1], lng: node[0] }}) 
         // Else skip over the cable entirely
         else {
@@ -109,10 +123,12 @@ class RouteAnimation {
           
       }
   
-      const routers_path = (r1, r2) => {
+      // points_path : Point Point -> [List-of Coordinate]
+      // Creates path of 2 coordinates between _p1_ and _p2_
+      const points_path = (p1, p2) => {
         return [
-          { lat: parseFloat(r1.latitude), lng: parseFloat(r1.longitude) },
-          { lat: parseFloat(r2.latitude), lng: parseFloat(r2.longitude) }
+          { lat: parseFloat(p1.latitude), lng: parseFloat(p1.longitude) },
+          { lat: parseFloat(p2.latitude), lng: parseFloat(p2.longitude) }
         ]
       }
   
@@ -128,13 +144,13 @@ class RouteAnimation {
   
         // Skip to the cable connection
         if (p2.type == "cable")
-          animate_connection(index + 1)
+          await animate_connection(index + 1)
         else {
           let path = [];
           if (p1.type == "cable")
             path = cable_path(p1)
           else
-            path = routers_path(p1, p2)
+            path = points_path(p1, p2)
   
           lines.push(draw_line(path, color, false, speed));
           blurred_lines.push(draw_line(path, color, true, speed));
@@ -159,9 +175,9 @@ class RouteAnimation {
   }
 }
 
-// Drawing helpers
+// ANIMATION-SPECIFIC HELPERS
 
-// draw_line : Router Router Color Map Boolean -> Path
+// draw_line : [List-of Coordinate] Color Boolean Speed -> Line
 // Draw a line on _map_ using a given _path_, dependent on if the line is _blurred_
 function draw_line(path, color, blurred, speed) {
 
@@ -182,7 +198,8 @@ function draw_line(path, color, blurred, speed) {
   return line;
 }
 
-// Adjust the offset from 0 to 100% in 1000/speed
+// animate_packet : Line Speed [List-of Coordinate] -> _
+// Animate a packet icon along _path_ at _speed_ on _line_, such that it mimics the speed at which the route is drawn
 function animate_packet(line, speed, path) {
   line.set("icons", [
     {
@@ -191,7 +208,6 @@ function animate_packet(line, speed, path) {
     }
   ]);
 
-  // Need to lengthen intervals
   let total_time = 1000/speed;
   let time_per_interval = 25;
   let num_intervals = total_time/time_per_interval;
@@ -225,6 +241,8 @@ function clear_lines(lines) {
   })
 }
 
+// display_server : Dict -> _
+// Displays the server marker on the map, using the location specified by _server_data_
 function display_server(server_data) {
   let destination = {
     "type": "router",
@@ -246,15 +264,3 @@ function display_server(server_data) {
   destinationMarker.setMap(map);
 }
 
-
-function start_animation() {
-  document.querySelector("#controller").classList.add("d-none");
-  document.querySelector("#animation-options").classList.remove("d-none");
-  animation_flag = true;
-}
-
-function stop_animation() {
-  animation_flag = false;
-  document.querySelector("#controller").classList.remove("d-none");
-  document.querySelector("#animation-options").classList.add("d-none");
-}

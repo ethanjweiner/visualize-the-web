@@ -1,5 +1,5 @@
-import sqlite3
 from flask import g
+import sqlite3
 
 
 class Database():
@@ -16,7 +16,6 @@ class Database():
 
     # dict_factory
     # Converts the given _row_ from the to a dictionary
-
     def dict_factory(self, cursor, row):
         d = {}
         for idx, col in enumerate(cursor.description):
@@ -25,7 +24,6 @@ class Database():
 
     # query
     # Once created, queries the database with _query_
-
     def query_db(self, query, args=(), one=False):
         cur = self.db.execute(query, args)
         rv = cur.fetchall()
@@ -34,6 +32,5 @@ class Database():
 
     # clear
     # Removes all entries from _table_
-
     def clear(self, table):
         self.db.execute('DELETE FROM '+table)

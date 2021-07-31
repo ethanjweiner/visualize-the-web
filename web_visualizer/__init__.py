@@ -1,65 +1,62 @@
-
-import os
-import jsmin
-import itertools
 from flask import Flask, request, render_template, g, abort, redirect
-import flask
 from flask_assets import Environment, Bundle
 from flask_sqlalchemy import SQLAlchemy
 
-# App configuration
-app = Flask(__name__)
+import json
+import os
+import jsmin
+import itertools
 
-# Database setup
+app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///data/points.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-# Other configuration
-app.config['SECRET_KEY'] = "vs&NwNhHHba$CPVCHWEmYj6X5RLqj@nWGD#3o%LHNW#k6cB@cD&7GtQVT4*TdPJN"
+import web_visualizer.py_main.route  # nopep8
+import web_visualizer.py_main.request  # nopep8
+import web_visualizer.py_main.routers  # nopep8
+import web_visualizer.py_auxiliary.error_handler  # nopep8
+from web_visualizer.py_auxiliary.config import *  # nopep8
 
-import web_visualizer.routes
-import web_visualizer.request
-import web_visualizer.routers
-import web_visualizer.error_handler
-
+app.config['SECRET_KEY'] = SECRET_KEY
 
 # Bundling Javascript
 assets = Environment(app)
-# Bundle javascript files into minified "bundle.js"
-js = Bundle('js/jquery.min.js', 'js/globals.js', 'js/animation.js', 'js/helpers.js', 'js/index.js',
+js = Bundle('js/jquery.min.js', 'js/globals.js', 'js/animation.js', 'js/helpers.js', 'js/init_display.js', 'js/index.js',
             filters='jsmin', output='bundle.js')
 assets.register('js_all', js)
-
-# CONSTANTS
-KEY = "AIzaSyCCl7-ieDSLRydryyQ1JaypI_dKuBhqfOc"
 
 
 # Index: Displays a static map on load
 @app.route("/")
 def index():
-    return render_template("index.html", key=KEY)
+    return render_template("index.html", key=API_KEY)
 
-# Error
-@app.route("/error", methods=["GET", "POST"])
+
+# Error: Provides an HTML template for an error handler
+@app.route("/error")
 def error():
     return render_template("error.html", error=error)
 
+
 # InfoWindow: Provides an HTML template for an info window
-# Creates a server window upon requests, & client window upon responses
-@app.route("/info-window")
+@app.route("/info-window", methods=["POST"])
 def info_window():
-    direction = flask.request.args.get("direction")
-    data = flask.requst.args.get("data")
+
+    direction = request.form.get("direction")
+    total_packets = request.form.get("total_packets")
+    packets_received = request.form.get("packets_received")
+    client_data = json.loads(request.form.get("client_data"))
+    server_data = json.loads(request.form.get("server_data"))
 
     if direction == "request":
-        return render_template("server_window.html", total_packets=data.total_packets, packets_received=data.packets_received, client_data=data.client_data, server_data=data.server_data)
+        return render_template("info_windows/server_window.html", total_packets=total_packets, packets_received=packets_received, client_data=client_data, server_data=server_data)
     else:
-        return render_template("client_window.html", total_packets=data.total_packets, packets_received=data.packets_received, client_data=data.client_data, server_data=data.server_data)
+        return render_template("info_windows/client_window.html", total_packets=total_packets, packets_received=packets_received, client_data=client_data, server_data=server_data)
 
 
 # close_connection
-# Closes the database when finished
+# Closes the IP database when finished
 @app.teardown_appcontext
 def close_connection(exception):
     ip_db = getattr(g, '_database', None)
@@ -67,7 +64,6 @@ def close_connection(exception):
         ip_db.close()
 
 
-# Database should already be initialized with tables, so no need to create it
-
+# Create database if not yet created
 db.create_all()
 db.session.commit()
