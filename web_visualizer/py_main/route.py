@@ -1,7 +1,7 @@
 from web_visualizer import app
 from web_visualizer.py_main.classes import Point, Router, LandingPoint
 from web_visualizer.py_auxiliary.helpers import *
-
+import random
 from flask import jsonify, request, session, abort
 
 
@@ -25,28 +25,17 @@ def routes():
 
     routers = Point.query.all()
 
-    # Dynamically set radius increment based on distance
-    # Wider radius ==> More options for routing
-    starting_increment = starting_radius(client_router, server_router)
-
     route = False
 
     while not route:
         if direction == "request":
             route = client_router.route(
-                server_router, routers, starting_increment)
+                server_router, routers)
         else:
             route = server_router.route(
-                client_router, routers, starting_increment)
+                client_router, routers)
 
     if len(route):
         return jsonify(list(map(lambda node: node.toJson(), route)))
     else:
         abort(500, description="No route could be found to the location of the provided domain. Please try again with new routers or a different URL.")
-
-
-def starting_radius(client_router, server_router):
-    candidate = distance(client_router, server_router) / 15
-    if candidate > 0.5:
-        return candidate
-    return 0.5
