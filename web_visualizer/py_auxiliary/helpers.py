@@ -1,9 +1,15 @@
-from math import cos, asin, sqrt, pi, isclose
+from math import cos, asin, sqrt, pi
+from math import isclose
+import random
 import pycountry_convert as pc
+from functools import reduce
+from numpy.random import choice
 
 
 # distance: Point Ppoint -> Number
 # Determines the geographically accurate distance between _p1_ and _p2_
+
+
 def distance(p1, p2):
     def deg2rad(deg): return deg * (math.pi/180)
     lat1 = float(p1.latitude)
@@ -87,3 +93,37 @@ def overlap(l1, l2):
         if el in l1:
             return True
     return False
+
+
+# choose_point : [List-of Point] Point -> Point
+# Randomly choose a point from _points_, weighting points higher that are closer to _destination_
+def choose_point(points, destination):
+    probabilities = generate_probabilities(points, destination)
+    return choice(points, p=probabilities)
+
+
+# generate_probabilities: [List-of Point] Point -> [List-of Number]
+# Generate the probabilities that each point should be chosen from _points_, based on its respective distance to _destination_
+def generate_probabilities(points, destination):
+    # The weight is inversely proportional to the distance to the destination
+    weights = (
+        list(map(lambda point: {"id": point.id, "weight": get_weight(point, destination)}, points)))
+    sum_weights = reduce(lambda acc, ele: ele["weight"] + acc, weights, 0)
+    return list(map(lambda ele: ele["weight"]/sum_weights, weights))
+
+
+# random_radius : Point Point -> Number
+def random_radius(origin, destination):
+    # Generate a random # in the correct range
+
+    d = distance(origin, destination)
+    lower = 0.5
+    upper = d/5
+
+    return random.random()*(upper-lower) + lower
+
+# get_weight : Po
+
+
+def get_weight(point, destination): return 1 / \
+    (distance(point, destination) ** 40)

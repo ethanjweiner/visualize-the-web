@@ -16,6 +16,7 @@ import web_visualizer.py_main.route  # nopep8
 import web_visualizer.py_main.request  # nopep8
 import web_visualizer.py_main.routers  # nopep8
 import web_visualizer.py_auxiliary.error_handler  # nopep8
+import web_visualizer.py_auxiliary.helpers  # nopep8
 from web_visualizer.py_auxiliary.config import *  # nopep8
 
 app.config['SECRET_KEY'] = SECRET_KEY
