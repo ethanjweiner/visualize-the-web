@@ -4,7 +4,7 @@ from web_visualizer.py_auxiliary.helpers import *
 from flask import jsonify, request, session, abort
 
 import random
-
+import time
 
 # A Route is a [List-of X] where X can be a:
 # - Router
@@ -24,18 +24,17 @@ def routes():
     server_router = Router(ip=server_data['ip_details']['ip'], latitude=server_data['ip_details']['latitude'],
                            longitude=server_data['ip_details']['longitude'], continent_code=server_data['ip_details']['continent'])
 
-    routers = Point.query.all()
+    points = Point.query.all()
 
     route = False
 
-    while not route:
-        if direction == "request":
-            # Set up a timer here?
-            route = client_router.route(
-                server_router, routers)
-        else:
-            route = server_router.route(
-                client_router, routers)
+    if direction == "request":
+        # Set up a timer here?
+        route = client_router.init_routing(
+            server_router, points)
+    else:
+        route = server_router.init_routing(
+            client_router, points)
 
     if len(route):
         return jsonify(list(map(lambda node: node.toJson(), route)))
