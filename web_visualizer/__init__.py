@@ -2,20 +2,28 @@ from flask import Flask, request, render_template, g, abort, redirect
 from flask_assets import Environment, Bundle
 from flask_sqlalchemy import SQLAlchemy
 
+
 import json
 import os
 import jsmin
 import itertools
+
+from werkzeug.middleware.profiler import ProfilerMiddleware
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///data/points.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
+app.config['PROFILE'] = True
+# Show 5 most expensive functions for each request
+app.wsgi_app = ProfilerMiddleware(app.wsgi_app, restrictions=[5])
+
 import web_visualizer.py_main.route  # nopep8
 import web_visualizer.py_main.request  # nopep8
 import web_visualizer.py_main.routers  # nopep8
 import web_visualizer.py_auxiliary.error_handler  # nopep8
+import web_visualizer.py_auxiliary.helpers  # nopep8
 from web_visualizer.py_auxiliary.config import *  # nopep8
 
 app.config['SECRET_KEY'] = SECRET_KEY
