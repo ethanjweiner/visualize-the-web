@@ -2,6 +2,8 @@ from web_visualizer import db
 from web_visualizer.py_auxiliary.helpers import *
 from web_visualizer.py_auxiliary.constants import *
 
+from flask import session
+
 import random
 import json
 import time
@@ -24,6 +26,16 @@ class Point(db.Model):
     def __repr__(self):
         return f"Point{self.type, self.id, self.latitude, self.longitude, self.continent_code}"
 
+    def init_routing(self, destination, points):
+        session['start_time'] = time.time()
+        route = False
+        while not route:
+            # Test --- every time the start time exceeds, a reroute should occur
+            session['start_time'] = time.time()
+            route = self.route(destination, points)
+
+        return route
+
     # route : Point Point [List-of Point] -> [List-of Point, Cable]
     # Determine a route of Points from _self_ to _destination_
     # ACCUMULATOR: The _path_ generated so far in the routing process
@@ -33,6 +45,10 @@ class Point(db.Model):
     # HEURISTIC: Distance from neighbor to destination (lower is better)
 
     def route(self, destination, points, total_distance=None, path=None):
+        # Restart the routing
+        if time.time() - session['start_time'] > MAX_TIME:
+            print("Maximum time exceeeded, rerouting...")
+            return path[0].init_routing(destination, points)
 
         if total_distance == None:
             total_distance = distance(self, destination)
@@ -156,6 +172,11 @@ class LandingPoint(Point):
 
     # Override
     def route(self, destination, points, total_distance, path=None):
+
+        # Restart the routing
+        if time.time() - session['start_time'] > MAX_TIME:
+            print("Maximum time exceeeded, rerouting...")
+            return path[0].init_routing(destination, points)
 
         # CIRCULAR CASE
         if self in path:
