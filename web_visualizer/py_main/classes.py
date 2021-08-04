@@ -4,6 +4,7 @@ from web_visualizer.py_auxiliary.constants import *
 
 import random
 import json
+import time
 
 
 class Point(db.Model):
@@ -21,7 +22,7 @@ class Point(db.Model):
     }
 
     def __repr__(self):
-        return f"Point{self.type, self.latitude, self.longitude, self.continent_code}"
+        return f"Point{self.type, self.id, self.latitude, self.longitude, self.continent_code}"
 
     # route : Point Point [List-of Point] -> [List-of Point, Cable]
     # Determine a route of Points from _self_ to _destination_
@@ -31,15 +32,16 @@ class Point(db.Model):
     # - [Non-circular case] Generally, the chosen neighbor is closer to the destination
     # HEURISTIC: Distance from neighbor to destination (lower is better)
 
-    def route(self, destination, routers, radius_increment=0.5, path=None):
+    def route(self, destination, points, total_distance=None, path=None):
 
-        # The radius can't expand too much
-        if radius_increment > 2 * distance(self, destination):
-            radius_increment = distance(self, destination)
+        if total_distance == None:
+            total_distance = distance(self, destination)
+
+        radius_increment = random_radius(total_distance)
 
         # Include the destination in the path to search for
-        if destination not in routers:
-            routers.append(destination)
+        if destination not in points:
+            points.append(destination)
 
         # Set the default path
         if path == None:
@@ -66,11 +68,11 @@ class Point(db.Model):
             # Try a path, starting with the closest routers
             while not candidate_path:
                 # Avoid paths that search for neighbors far away
-                if radius > 5 * distance(self, destination):
+                if radius > 2 * distance(self, destination):
                     return False
 
                 candidate_path = self.route_list(
-                    destination, radius, routers, path=path+[self])
+                    destination, radius, points, total_distance, path=path+[self])
 
                 radius += radius_increment
 
@@ -78,49 +80,33 @@ class Point(db.Model):
 
      # route_list : Point Point Number [List-of Point] -> [Maybe List-of Point, Cable]
     # Attempts to find a path from _origin_ to _destination_, testing all neighboring routers as specified by _radius_
-    def route_list(self, destination, radius, routers, path=[]):
-        # Search for nearby routers closer to destination
-        candidate_routers = self.neighbors(destination, routers, radius)
+    def route_list(self, destination, radius, points, total_distance, path=[]):
 
-        # Sort routers for efficiency (test closest routers first)
-        # Switch to a weighted shuffle
-        random.shuffle(candidate_routers)
+        candidate_points = self.neighbors_v2(destination, points, path, radius)
 
-        # If the destination is a neighbor, the path is complete
-        if destination in candidate_routers:
+        # BASE CASE
+        if destination in candidate_points:
             return path+[destination]
 
-        for candidate in candidate_routers:
-            # Append the candidate to a new path
+        # Random sample without replacement
+        while len(candidate_points):
+
+            candidate = choose_point(candidate_points, destination)
             candidate_path = candidate.route(
-                destination, routers, radius, path=path)
+                destination, points, total_distance, path=path)
 
             if candidate_path:
                 return candidate_path
 
+            candidate_points.remove(candidate)
+
         return False
 
-    # neighbors : Point Point Number [List-of Point] -> [List-of Point]
-    # Attempts to find routers within _radius_ of _self_
-    # - Any Routers neighbors must be closer to _destination_ than _self_
-    # - LandingPoint neighbors do not need to be much closer to _destination_
-    def neighbors(self, destination, routers, radius):
-
-        # is_candidate : Router -> Boolean
-        # Is _point_ a neighbor of _self_ (as defined in the purpose statement)?
-        def is_candidate(point):
-            # If the candidate is a Router, it must be closer to the destination and not too close to the previous router
-            if isinstance(point, Router):
-                return (self is not point) and (self.continent_code == None or point.continent_code == self.continent_code) and (radius/5 <= distance(self, point) <= radius) and (distance(point, destination) < distance(self, destination))
-            # If the candidate is a LandingPoint, give it some leeway
-            else:
-                max_distance = distance(self, destination) + 0.25
-                return (self is not point) and (self.continent_code == None or point.continent_code == self.continent_code) and (distance(self, point) <= radius) and (distance(point, destination) < max_distance)
-
-        # Try finding neighbors within _radius_
-        candidates = list(filter(is_candidate, routers))
-
-        return candidates
+    # neighbors_v2 : Point Point [List-of POint] Number -> [List-of Point]
+    # Attempts to find any points within _radius_ of _self_, from _points_
+    # Excludes any points in _path_
+    def neighbors_v2(self, destination, points, path, radius):
+        return list(filter(lambda point: point.continent_code == self.continent_code and distance(self, point) <= radius and point not in path, points))
 
 
 class Router(Point):
@@ -169,7 +155,11 @@ class LandingPoint(Point):
         }
 
     # Override
-    def route(self, destination, routers, radius_increment, path=None):
+    def route(self, destination, points, total_distance, path=None):
+
+        # CIRCULAR CASE
+        if self in path:
+            return False
 
         # Set the default path
         if path == None:
@@ -179,17 +169,13 @@ class LandingPoint(Point):
         if self.latitude == destination.latitude and self.longitude == destination.longitude:
             return path + [destination]
 
-        # FAULTY CASE: Retry routing from the start
+        # FAULTY CASE
         elif len(path) > MAX_PATH_LENGTH:
-            return path[0].route(destination, routers)
-
-        # CIRCULAR CASE
-        elif self in path:
-            return False
+            return path[0].route(destination, points, total_distance)
 
         # NORMAL ROUTING (same continent as destination)
         if self.continent_code == destination.continent_code:
-            return Point.route(self, destination, routers, radius_increment, path=path)
+            return Point.route(self, destination, points, total_distance, path=path)
 
         # TRANSCONTINENTAL ROUTING
         else:
@@ -203,14 +189,13 @@ class LandingPoint(Point):
 
             # Filter paths that send to an unvisited continent
             path_candidates = list(filter(lambda candidate: candidate.endpoint != None and not contains_continent_code(
-                candidate.endpoint, path+[self]), path_candidates))
+                candidate.endpoint.continent_code, path+[self]), path_candidates))
 
             if not len(path_candidates):
                 return False
 
             # Choose the endpoint closest to the destination
-            path_candidates.sort(
-                key=lambda candidate: distance(candidate.endpoint, destination))
+            random.shuffle(path_candidates)
 
             # Determine the cable to route with
             for candidate in path_candidates:
@@ -220,7 +205,7 @@ class LandingPoint(Point):
                 cable.find_nodes()
 
                 candidate_path = candidate.endpoint.route(
-                    destination, routers, radius_increment, path + [self, cable])
+                    destination, points, total_distance, path + [self, cable])
 
                 if candidate_path:
                     return candidate_path
@@ -320,7 +305,7 @@ def polyline_dfs(whole_cable, start_coordinate, end_coordinate):
                 if overlap(cable_part, cable_accumulator):
                     return False
 
-                candidate_path = polyline_dfs_helper(
+                candidate_path = polyline_dfs_accum(
                     cable_part[len(cable_part)-1], cable_accumulator + cable_part[:-1])
                 if candidate_path:
                     return candidate_path
