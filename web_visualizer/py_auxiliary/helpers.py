@@ -113,12 +113,10 @@ def generate_probabilities(points, destination):
 
 
 # random_radius : Point Point -> Number
-def random_radius(origin, destination):
+def random_radius(distance):
     # Generate a random # in the correct range
-
-    d = distance(origin, destination)
-    lower = 0.5
-    upper = d/5
+    lower = distance / 15
+    upper = distance / 2
 
     return random.random()*(upper-lower) + lower
 
