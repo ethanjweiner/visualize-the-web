@@ -1,8 +1,9 @@
 from web_visualizer import app
 from web_visualizer.py_main.classes import Point, Router, LandingPoint
 from web_visualizer.py_auxiliary.helpers import *
-import random
 from flask import jsonify, request, session, abort
+
+import random
 
 
 # A Route is a [List-of X] where X can be a:
@@ -29,6 +30,7 @@ def routes():
 
     while not route:
         if direction == "request":
+            # Set up a timer here?
             route = client_router.route(
                 server_router, routers)
         else:
