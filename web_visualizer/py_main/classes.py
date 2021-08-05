@@ -84,7 +84,7 @@ class Point(db.Model):
             # Try a path, starting with the closest routers
             while not candidate_path:
                 # Avoid paths that search for neighbors far away
-                if radius > 2 * distance(self, destination):
+                if radius > total_distance:
                     return False
 
                 candidate_path = self.route_list(
