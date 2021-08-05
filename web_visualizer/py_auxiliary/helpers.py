@@ -11,7 +11,6 @@ from numpy.random import choice
 
 
 def distance(p1, p2):
-    def deg2rad(deg): return deg * (math.pi/180)
     lat1 = float(p1.latitude)
     lat2 = float(p2.latitude)
     lon1 = float(p1.longitude)
@@ -20,9 +19,7 @@ def distance(p1, p2):
     p = pi/180
     a = 0.5 - cos((lat2-lat1)*p)/2 + cos(lat1*p) * \
         cos(lat2*p) * (1-cos((lon2-lon1)*p))/2
-    return 116 * asin(sqrt(a))  # Rough approximation of change in lat/long
-
-    return c
+    return 116 * asin(sqrt(a))
 
 
 # parse_continent : String -> String
