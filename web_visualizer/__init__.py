@@ -17,7 +17,7 @@ db = SQLAlchemy(app)
 
 app.config['PROFILE'] = True
 # Show 5 most expensive functions for each request
-app.wsgi_app = ProfilerMiddleware(app.wsgi_app, restrictions=[5])
+app.wsgi_app = ProfilerMiddleware(app.wsgi_app, restrictions=[15])
 
 import web_visualizer.py_main.route  # nopep8
 import web_visualizer.py_main.request  # nopep8
