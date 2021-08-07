@@ -95,8 +95,7 @@ def overlap(l1, l2):
 # choose_point : [List-of Point] Point -> Point
 # Randomly choose a point from _points_, weighting points higher that are closer to _destination_
 def choose_point(points, destination):
-    probabilities = generate_probabilities(points, destination)
-    return choice(points, p=probabilities)
+    return choice(points, p=generate_probabilities(points, destination))
 
 
 # generate_probabilities: [List-of Point] Point -> [List-of Number]
@@ -111,6 +110,7 @@ def generate_probabilities(points, destination):
 
 # random_radius : Point Point -> Number
 def random_radius(distance):
+    return 5
     # Generate a random # in the correct range
     lower = distance / 15
     upper = distance / 2
@@ -121,4 +121,4 @@ def random_radius(distance):
 
 
 def get_weight(point, destination): return 1 / \
-    (distance(point, destination) ** 40)
+    (distance(point, destination) ** 50)
