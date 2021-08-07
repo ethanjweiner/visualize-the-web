@@ -7,6 +7,7 @@ from flask import session
 import random
 import json
 import time
+import random
 
 
 class Point(db.Model):
@@ -26,13 +27,22 @@ class Point(db.Model):
     def __repr__(self):
         return f"Point{self.type, self.id, self.latitude, self.longitude, self.continent_code}"
 
-    def init_routing(self, destination, points):
+    def init_routing(self, destination):
         session['start_time'] = time.time()
+        session['total_distance'] = distance(self, destination)
+
+        if destination not in Point.query.all():
+            db.session.add(destination)
+            db.session.commit()
+
         route = False
         while not route:
-            # Test --- every time the start time exceeds, a reroute should occur
             session['start_time'] = time.time()
-            route = self.route(destination, points)
+            route = self.route(destination)
+            # Fill in all cables
+            for e in route:
+                if isinstance(e, Cable):
+                    e.find_nodes()
 
         return route
 
@@ -44,30 +54,24 @@ class Point(db.Model):
     # - [Non-circular case] Generally, the chosen neighbor is closer to the destination
     # HEURISTIC: Distance from neighbor to destination (lower is better)
 
-    def route(self, destination, points, total_distance=None, path=None):
-        # Restart the routing
+    def route(self, destination, path=None):
+
+        # INITIALIZATION
+
         if time.time() - session['start_time'] > MAX_TIME:
             print("Maximum time exceeeded, rerouting...")
-            return path[0].init_routing(destination, points)
+            return path[0].init_routing(destination)
 
-        if total_distance == None:
-            total_distance = distance(self, destination)
-
-        radius_increment = random_radius(total_distance)
-
-        # Include the destination in the path to search for
-        if destination not in points:
-            points.append(destination)
-
-        # Set the default path
         if path == None:
             path = []
 
-        # BASE CASE: The destination has been reached -> Add destination & return
+        radius_increment = random_radius(session['total_distance'])
+
+        # BASE CASE
         if self.latitude == destination.latitude and self.longitude == destination.longitude:
             return path + [destination]
 
-        # FAULTY CASE
+        # MAX CASE
         elif len(path) > MAX_PATH_LENGTH:
             return False
 
@@ -79,37 +83,35 @@ class Point(db.Model):
         else:
 
             candidate_path = False
-            radius = radius_increment
 
-            # Try a path, starting with the closest routers
             while not candidate_path:
-                # Avoid paths that search for neighbors far away
-                if radius > total_distance:
+
+                if radius_increment > session['total_distance']:
                     return False
 
                 candidate_path = self.route_list(
-                    destination, radius, points, total_distance, path=path+[self])
+                    destination, radius_increment, path=path+[self])
 
-                radius += radius_increment
+                radius_increment += 0.5
 
             return candidate_path
 
-     # route_list : Point Point Number [List-of Point] -> [Maybe List-of Point, Cable]
+    # route_list : Point Point Number [List-of Point] -> [Maybe List-of Point, Cable]
     # Attempts to find a path from _origin_ to _destination_, testing all neighboring routers as specified by _radius_
-    def route_list(self, destination, radius, points, total_distance, path=[]):
+    def route_list(self, destination, radius, path=None):
 
-        candidate_points = self.neighbors_v2(destination, points, path, radius)
+        candidate_points = self.neighbors(destination, path, radius)
 
         # BASE CASE
         if destination in candidate_points:
             return path+[destination]
 
-        # Random sample without replacement
+        # CHOOSE NEIGHBOR AS A WEIGHTED RANDOM SELECTION1
         while len(candidate_points):
 
             candidate = choose_point(candidate_points, destination)
             candidate_path = candidate.route(
-                destination, points, total_distance, path=path)
+                destination, path=path)
 
             if candidate_path:
                 return candidate_path
@@ -118,11 +120,13 @@ class Point(db.Model):
 
         return False
 
-    # neighbors_v2 : Point Point [List-of POint] Number -> [List-of Point]
+    # neighbors : Point Point [List-of POint] Number -> [List-of Point]
     # Attempts to find any points within _radius_ of _self_, from _points_
     # Excludes any points in _path_
-    def neighbors_v2(self, destination, points, path, radius):
-        return list(filter(lambda point: point.continent_code == self.continent_code and distance(self, point) <= radius and point not in path, points))
+    def neighbors(self, destination, path, radius):
+        points_on_continent = Point.query.filter_by(
+            continent_code=self.continent_code).all()
+        return list(filter(lambda point: distance(self, point) <= radius and point not in path, points_on_continent))
 
 
 class Router(Point):
@@ -171,51 +175,38 @@ class LandingPoint(Point):
         }
 
     # Override
-    def route(self, destination, points, total_distance, path=None):
+    def route(self, destination, path=None):
 
-        # Restart the routing
+        # INITIALIZATION
         if time.time() - session['start_time'] > MAX_TIME:
             print("Maximum time exceeeded, rerouting...")
-            return path[0].init_routing(destination, points)
-
-        # CIRCULAR CASE
-        if self in path:
-            return False
+            return path[0].init_routing(destination)
 
         # Set the default path
         if path == None:
             path = []
 
-        # BASE CASE: The destination has been reached -> Add destination & return
-        if self.latitude == destination.latitude and self.longitude == destination.longitude:
-            return path + [destination]
+        # CIRCULAR CASE
+        if self in path:
+            return False
 
         # FAULTY CASE
         elif len(path) > MAX_PATH_LENGTH:
-            return path[0].route(destination, points, total_distance)
+            return path[0].route(destination)
 
-        # NORMAL ROUTING (same continent as destination)
+        # IN-CONTINENT ROUTING
         if self.continent_code == destination.continent_code:
-            return Point.route(self, destination, points, total_distance, path=path)
+            return Point.route(self, destination, path=path)
 
         # TRANSCONTINENTAL ROUTING
         else:
-            # Search for all paths
-            path_candidates = Path.query.filter_by(
-                start_point_id=self.point_id).all()
 
-            # Add the endpoints to the paths
-            for candidate in path_candidates:
-                candidate.set_endpoint()
-
-            # Filter paths that send to an unvisited continent
-            path_candidates = list(filter(lambda candidate: candidate.endpoint != None and not contains_continent_code(
-                candidate.endpoint.continent_code, path+[self]), path_candidates))
+            path_candidates = find_paths(self.point_id, path+[self])
 
             if not len(path_candidates):
                 return False
 
-            # Choose the endpoint closest to the destination
+            # Choose a random path
             random.shuffle(path_candidates)
 
             # Determine the cable to route with
@@ -223,10 +214,9 @@ class LandingPoint(Point):
 
                 cable = Cable([float(self.longitude), float(self.latitude)], [float(candidate.endpoint.longitude),
                                                                               float(candidate.endpoint.latitude)], candidate.slug)
-                cable.find_nodes()
 
                 candidate_path = candidate.endpoint.route(
-                    destination, points, total_distance, path + [self, cable])
+                    destination, path + [self, cable])
 
                 if candidate_path:
                     return candidate_path
@@ -271,6 +261,7 @@ class Cable():
 
     # Update the nodes with the cable
     def find_nodes(self):
+
         with open(CABLES_GEOJSON_PATH) as cables_geojson:
             whole_cables = json.load(cables_geojson)["features"]
 
@@ -283,7 +274,8 @@ class Cable():
 
             # If no cable could be found, this route is false
             if whole_cable == None:
-                self.nodes = []
+                self.nodes = False
+                return False
 
             self.nodes = polyline_dfs(
                 whole_cable, self.start_coordinate, self.end_coordinate)
@@ -359,3 +351,19 @@ def starting_cable_parts(start_coordinate, cable_parts):
             candidates.append([ele for ele in reversed(cable_part[0:start+1])])
 
     return candidates
+
+
+# find_paths : String [List-of Point] -> [List-of Path]
+# Find a path from the point specified by _point_id_ to a continent not yet visited in _path_
+def find_paths(point_id, path):
+    # Search for all paths
+    candidates = Path.query.filter_by(
+        start_point_id=point_id).all()
+
+    # Add the endpoints to the paths
+    for candidate in candidates:
+        candidate.set_endpoint()
+
+    # Filter paths that send to an unvisited continent
+    return list(filter(lambda candidate: candidate.endpoint != None and not contains_continent_code(
+        candidate.endpoint.continent_code, path), candidates))
