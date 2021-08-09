@@ -15,9 +15,10 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///data/points.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-app.config['PROFILE'] = True
-# Show 5 most expensive functions for each request
-app.wsgi_app = ProfilerMiddleware(app.wsgi_app, restrictions=[15])
+# app.config['PROFILE'] = True
+# # Show 5 most expensive functions for each request
+# app.wsgi_app = ProfilerMiddleware(
+#     app.wsgi_app, restrictions=[3])
 
 import web_visualizer.py_main.route  # nopep8
 import web_visualizer.py_main.request  # nopep8
