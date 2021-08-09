@@ -18,3 +18,5 @@
 /web_visualizer/data/**
 /web_visualizer/config.py
 /web_visualizer/temporary.py
+/web_visualizer/profile/**
+**/web_visualizer/profile/
