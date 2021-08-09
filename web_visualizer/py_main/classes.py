@@ -2,7 +2,7 @@ from web_visualizer import db
 from web_visualizer.py_auxiliary.helpers import *
 from web_visualizer.py_auxiliary.constants import *
 
-from flask import session
+from flask import session, abort
 
 import random
 import json
@@ -28,6 +28,8 @@ class Point(db.Model):
         return f"Point{self.type, self.id, self.latitude, self.longitude, self.continent_code}"
 
     def init_routing(self, destination):
+        print("Routing initialized....")
+
         session['start_time'] = time.time()
         session['total_distance'] = distance(self, destination)
 
@@ -35,14 +37,16 @@ class Point(db.Model):
             db.session.add(destination)
             db.session.commit()
 
-        route = False
-        while not route:
-            session['start_time'] = time.time()
-            route = self.route(destination)
-            # Fill in all cables
+        session['start_time'] = time.time()
+        route = self.route(destination)
+        # Fill in all cables
+        if route:
             for e in route:
                 if isinstance(e, Cable):
                     e.find_nodes()
+
+        else:
+            abort(500, "No route to the destination could be found.")
 
         return route
 
@@ -58,22 +62,25 @@ class Point(db.Model):
 
         # INITIALIZATION
 
-        if time.time() - session['start_time'] > MAX_TIME:
-            print("Maximum time exceeeded, rerouting...")
-            return path[0].init_routing(destination)
-
         if path == None:
             path = []
+
+        # CUTOFFS
+
+        # if time.time() - session['start_time'] > MAX_TIME:
+        #     print("Maximum time exceeeded, rerouting...")
+        #     return path[0].init_routing(destination)
+
+        # MAX CASE
+        if len(path) > MAX_PATH_LENGTH:
+            print("Max path length reached")
+            return path[0].init_routing(destination)
 
         radius_increment = random_radius(session['total_distance'])
 
         # BASE CASE
         if self.latitude == destination.latitude and self.longitude == destination.longitude:
             return path + [destination]
-
-        # MAX CASE
-        elif len(path) > MAX_PATH_LENGTH:
-            return False
 
         # CIRCULAR CASE
         elif self in path:
@@ -109,7 +116,12 @@ class Point(db.Model):
         # CHOOSE NEIGHBOR AS A WEIGHTED RANDOM SELECTION1
         while len(candidate_points):
 
-            candidate = choose_point(candidate_points, destination)
+            candidate = choose_point(candidate_points, destination, self)
+
+            # If, no more of the points are valid candidates (too far away), try a new radius
+            if not candidate:
+                return False
+
             candidate_path = candidate.route(
                 destination, path=path)
 
@@ -124,9 +136,7 @@ class Point(db.Model):
     # Attempts to find any points within _radius_ of _self_, from _points_
     # Excludes any points in _path_
     def neighbors(self, destination, path, radius):
-        points_on_continent = Point.query.filter_by(
-            continent_code=self.continent_code).all()
-        return list(filter(lambda point: distance(self, point) <= radius and point not in path, points_on_continent))
+        return list(filter(lambda point: distance(self, point) <= radius and same_landmass(self, destination) and point not in path, Point.query.all()))
 
 
 class Router(Point):
@@ -178,30 +188,34 @@ class LandingPoint(Point):
     def route(self, destination, path=None):
 
         # INITIALIZATION
-        if time.time() - session['start_time'] > MAX_TIME:
-            print("Maximum time exceeeded, rerouting...")
-            return path[0].init_routing(destination)
 
-        # Set the default path
         if path == None:
             path = []
 
+        # CUTOFFS
+
+        # if time.time() - session['start_time'] > MAX_TIME:
+        #     print("Maximum time exceeeded, rerouting...")
+        #     return path[0].init_routing(destination)
+
+        if len(path) > MAX_PATH_LENGTH:
+            print("Max path length reached")
+            return path[0].init_routing(destination)
+
         # CIRCULAR CASE
         if self in path:
+            print("Circular landing point path")
             return False
 
-        # FAULTY CASE
-        elif len(path) > MAX_PATH_LENGTH:
-            return path[0].route(destination)
-
-        # IN-CONTINENT ROUTING
-        if self.continent_code == destination.continent_code:
+        # INTER-LANDMASS ROUTING
+        if same_landmass(self, destination):
             return Point.route(self, destination, path=path)
 
-        # TRANSCONTINENTAL ROUTING
+        # TRANS-LANDMASS ROUTING
         else:
+            print("Trans-landmass routing")
 
-            path_candidates = find_paths(self.point_id, path+[self])
+            path_candidates = find_paths(self, destination, path+[self])
 
             if not len(path_candidates):
                 return False
@@ -212,8 +226,11 @@ class LandingPoint(Point):
             # Determine the cable to route with
             for candidate in path_candidates:
 
-                cable = Cable([float(self.longitude), float(self.latitude)], [float(candidate.endpoint.longitude),
-                                                                              float(candidate.endpoint.latitude)], candidate.slug)
+                cable = Cable([float(self.longitude),
+                               float(self.latitude)],
+                              [float(candidate.endpoint.longitude),
+                               float(candidate.endpoint.latitude)],
+                              candidate.slug)
 
                 candidate_path = candidate.endpoint.route(
                     destination, path + [self, cable])
@@ -353,17 +370,20 @@ def starting_cable_parts(start_coordinate, cable_parts):
     return candidates
 
 
-# find_paths : String [List-of Point] -> [List-of Path]
-# Find a path from the point specified by _point_id_ to a continent not yet visited in _path_
-def find_paths(point_id, path):
+# find_paths : LandingPoint Point [List-of Point] -> [List-of Path]
+# Find paths from _start_ that progress toward the destination
+def find_paths(start, destination, path):
+    # Idea: Choose a path like weighted random sampling?
+
+    current_distance = distance(start, destination)
+
     # Search for all paths
     candidates = Path.query.filter_by(
-        start_point_id=point_id).all()
+        start_point_id=start.point_id).all()
 
     # Add the endpoints to the paths
     for candidate in candidates:
         candidate.set_endpoint()
 
-    # Filter paths that send to an unvisited continent
-    return list(filter(lambda candidate: candidate.endpoint != None and not contains_continent_code(
-        candidate.endpoint.continent_code, path), candidates))
+    # Filter paths that progress to the destination
+    return list(filter(lambda candidate: candidate.endpoint != None and distance(candidate.endpoint, destination) <= current_distance - 1, candidates))
