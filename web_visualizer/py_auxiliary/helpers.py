@@ -4,12 +4,17 @@ import random
 import pycountry_convert as pc
 from functools import reduce
 from numpy.random import choice
+from flask import session
 
 
-# distance: Point Ppoint -> Number
+# same_landmass: Point Point -> Boolean
+# Are _p1_ and _p2_ on the same landmass?
+def same_landmass(p1, p2):
+    return p1.continent_code == p2.continent_code or (p1.continent_code == 'AS' and p2.continent_code == 'EU') or (p1.continent_code == 'EU' and p2.continent_code == 'AS')
+
+
+# distance: Point Point -> Number
 # Determines the geographically accurate distance between _p1_ and _p2_
-
-
 def distance(p1, p2):
     lat1 = float(p1.latitude)
     lat2 = float(p2.latitude)
@@ -92,33 +97,50 @@ def overlap(l1, l2):
     return False
 
 
-# choose_point : [List-of Point] Point -> Point
+# choose_point : [List-of Point] Point Number -> [Maybe Point]
 # Randomly choose a point from _points_, weighting points higher that are closer to _destination_
-def choose_point(points, destination):
-    return choice(points, p=generate_probabilities(points, destination))
+def choose_point(points, destination, cmp_point):
+    probabilities = generate_probabilities(
+        points, destination, distance(cmp_point, destination))
+    if not probabilities:
+        return False
+    return choice(points, p=generate_probabilities(points, destination, distance(cmp_point, destination)))
 
 
-# generate_probabilities: [List-of Point] Point -> [List-of Number]
-# Generate the probabilities that each point should be chosen from _points_, based on its respective distance to _destination_
-def generate_probabilities(points, destination):
+# generate_probabilities: [List-of Point] Point Number -> [Maybe List-of Number]
+# Generate the probabilities that each point should be chosen from _points_, based on how much closer it is to the destination than _reference_point_
+def generate_probabilities(points, destination, cmp_distance):
     # The weight is inversely proportional to the distance to the destination
     weights = (
-        list(map(lambda point: {"id": point.id, "weight": get_weight(point, destination)}, points)))
+        list(map(lambda point: {"id": point.id, "weight": get_weight(point, destination, cmp_distance)}, points)))
     sum_weights = reduce(lambda acc, ele: ele["weight"] + acc, weights, 0)
+    if sum_weights == 0:
+        return False
     return list(map(lambda ele: ele["weight"]/sum_weights, weights))
 
 
+# get_weight : Point Point Number -> Number
+# Generate a weight for a _point_ to be selected based on how much closer it is to _destination_ than _cmp_distance_
+def get_weight(point, destination, cmp_distance):
+    diff = cmp_distance - distance(point, destination)
+
+    if diff <= -1:
+        return 0
+
+    # Must move the router sobstantially
+    if abs(diff) <= session['total_distance'] / 30:
+        return 0
+
+    return (diff + 1) * 100
+
+
 # random_radius : Point Point -> Number
+# Generate a random starting radius, based on the total _distance_ from the starting point to the destination
 def random_radius(distance):
-    return 5
-    # Generate a random # in the correct range
-    lower = distance / 15
+    lower = distance / 8
+    lower = lower if lower < 3 else 3  # Lower must be at most 3
     upper = distance / 2
+    upper = upper if upper < 10 else 10  # Upper must be at most 8
+    upper = upper if upper > 1 else 1  # Upper must be at least 1
 
     return random.random()*(upper-lower) + lower
-
-# get_weight : Po
-
-
-def get_weight(point, destination): return 1 / \
-    (distance(point, destination) ** 50)
