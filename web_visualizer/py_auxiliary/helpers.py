@@ -99,12 +99,12 @@ def overlap(l1, l2):
 
 # choose_point : [List-of Point] Point Number -> [Maybe Point]
 # Randomly choose a point from _points_, weighting points higher that are closer to _destination_
-def choose_point(points, destination, cmp_point):
+def choose_point(points, destination, cmp_distance):
     probabilities = generate_probabilities(
-        points, destination, distance(cmp_point, destination))
+        points, destination, cmp_distance)
     if not probabilities:
         return False
-    return choice(points, p=generate_probabilities(points, destination, distance(cmp_point, destination)))
+    return choice(points, p=probabilities)
 
 
 # generate_probabilities: [List-of Point] Point Number -> [Maybe List-of Number]
@@ -124,23 +124,22 @@ def generate_probabilities(points, destination, cmp_distance):
 def get_weight(point, destination, cmp_distance):
     diff = cmp_distance - distance(point, destination)
 
-    if diff <= -1:
+    # Must move the router substantially
+    if diff <= 0.5 and point.type == "router":
         return 0
 
-    # Must move the router sobstantially
-    if abs(diff) <= session['total_distance'] / 30:
+    if diff <= -1 and point.type == "landing_point":
         return 0
 
-    return (diff + 1) * 100
+    return (diff + 1) * 5
 
 
 # random_radius : Point Point -> Number
 # Generate a random starting radius, based on the total _distance_ from the starting point to the destination
 def random_radius(distance):
-    lower = distance / 8
-    lower = lower if lower < 3 else 3  # Lower must be at most 3
-    upper = distance / 2
-    upper = upper if upper < 10 else 10  # Upper must be at most 8
-    upper = upper if upper > 1 else 1  # Upper must be at least 1
+    rand = random.random() * distance / 3 + \
+        session['total_distance'] / 10  # At least 0.5
 
-    return random.random()*(upper-lower) + lower
+    rand = rand if rand < 15 else 15
+    rand = rand if rand > 2 else 2
+    return rand
