@@ -1,6 +1,6 @@
 {% macro controller() -%}
 <div id="controller" class="mb-5">
-    <h1 class="text-center pt-3 d-none d-md-block">Web Visualizer</h1>
+    <h1 class="text-center pt-3 d-md-block">Web Visualizer</h1>
     <hr class="d-none d-md-block" />
     <p class="mx-2 mt-3 mt-md-0">
       Use the form below to simulate an HTTP request:
@@ -78,7 +78,8 @@
       </form>
     </div>
     <hr class="d-none d-md-block">
-    <div id="add-marker">
+    <!-- TEMPORARY COORDINATE FORM -->
+    <!-- <div id="add-marker">
       <h4 class="text-center">Add Marker</h4>
       <form class="mt-3 mx-2 p-2 rounded" id="coord-form">
         <label for="latitude" class="form-label">Latitude</label>
@@ -93,6 +94,6 @@
           />
         </div>
       </form>
-    </div>
+    </div> -->
   </div>
   {%- endmacro %}
