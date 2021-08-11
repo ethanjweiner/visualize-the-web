@@ -1,3 +1,10 @@
+// loadModal
+function loadModal() {
+  // Display the modal on load
+  var modal = new bootstrap.Modal(document.getElementById("about-modal"))
+  modal.show()
+}
+
 // loadCables
 // Statically displays all oceanic cables on _map_
 function loadCables() {

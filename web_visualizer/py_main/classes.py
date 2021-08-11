@@ -30,15 +30,16 @@ class Point(db.Model):
     def init_routing(self, destination):
         print("Routing initialized....")
 
+        points = Point.query.all()
+        points.append(destination)
+
         session['start_time'] = time.time()
         session['total_distance'] = distance(self, destination)
 
-        if destination not in Point.query.all():
-            db.session.add(destination)
-            db.session.commit()
+        route = self.route(destination, points)
 
-        session['start_time'] = time.time()
-        route = self.route(destination)
+        print("Route time: ", time.time()-session['start_time'])
+
         # Fill in all cables
         if route:
             for e in route:
@@ -57,8 +58,7 @@ class Point(db.Model):
     # - [Circular case] Terminate the route
     # - [Non-circular case] Generally, the chosen neighbor is closer to the destination
     # HEURISTIC: Distance from neighbor to destination (lower is better)
-
-    def route(self, destination, path=None):
+    def route(self, destination, points, path=None):
 
         # INITIALIZATION
 
@@ -67,11 +67,12 @@ class Point(db.Model):
 
         # CUTOFFS
 
-        # if time.time() - session['start_time'] > MAX_TIME:
-        #     print("Maximum time exceeeded, rerouting...")
-        #     return path[0].init_routing(destination)
+        if time.time() - session['start_time'] > MAX_TIME:
+            print("Maximum time exceeeded, rerouting...")
+            return path[0].init_routing(destination)
 
         # MAX CASE
+
         if len(path) > MAX_PATH_LENGTH:
             print("Max path length reached")
             return path[0].init_routing(destination)
@@ -97,7 +98,7 @@ class Point(db.Model):
                     return False
 
                 candidate_path = self.route_list(
-                    destination, radius_increment, path=path+[self])
+                    destination, radius_increment, points, path=path+[self])
 
                 radius_increment += 0.5
 
@@ -105,25 +106,26 @@ class Point(db.Model):
 
     # route_list : Point Point Number [List-of Point] -> [Maybe List-of Point, Cable]
     # Attempts to find a path from _origin_ to _destination_, testing all neighboring routers as specified by _radius_
-    def route_list(self, destination, radius, path=None):
+    def route_list(self, destination, radius, points, path=None):
 
-        candidate_points = self.neighbors(destination, path, radius)
+        candidate_points = self.neighbors(destination, path, radius, points)
+        cmp_distance = distance(self, destination)
 
         # BASE CASE
         if destination in candidate_points:
             return path+[destination]
 
-        # CHOOSE NEIGHBOR AS A WEIGHTED RANDOM SELECTION1
+        # CHOOSE NEIGHBOR AS A WEIGHTED RANDOM SELECTION (slower)
         while len(candidate_points):
 
-            candidate = choose_point(candidate_points, destination, self)
+            candidate = choose_point(
+                candidate_points, destination, cmp_distance)
 
-            # If, no more of the points are valid candidates (too far away), try a new radius
             if not candidate:
                 return False
 
             candidate_path = candidate.route(
-                destination, path=path)
+                destination, points, path=path)
 
             if candidate_path:
                 return candidate_path
@@ -132,11 +134,25 @@ class Point(db.Model):
 
         return False
 
+        # CHOOSE A NEIGHBOR, STARTING W/ THOSE CLOSEST TO DESTINATION (faster)
+        candidate_points.sort(key=lambda point: distance(point, destination))
+
+        candidate_path = False
+
+        for candidate in candidate_points:
+
+            candidate_path = candidate.route(
+                destination, points, path=path)
+
+            if candidate_path:
+                return candidate_path
+
+        return False
+
     # neighbors : Point Point [List-of POint] Number -> [List-of Point]
-    # Attempts to find any points within _radius_ of _self_, from _points_
-    # Excludes any points in _path_
-    def neighbors(self, destination, path, radius):
-        return list(filter(lambda point: distance(self, point) <= radius and same_landmass(self, destination) and point not in path, Point.query.all()))
+    # Attempts to find any points within _radius_ of _self_, from _points_, on the same landmass as
+    def neighbors(self, destination, path, radius, points):
+        return list(filter(lambda point: distance(self, point) < radius and same_landmass(self, point) and point not in path, points))
 
 
 class Router(Point):
@@ -184,8 +200,25 @@ class LandingPoint(Point):
             "continent_code": self.continent_code,
         }
 
+    def treat_as_router(self, destination, path, points):
+        if same_landmass(self, destination):
+            return True
+
+        # Call superclass method
+        reference_neighbors = Point.neighbors(
+            self, destination, path, 10, points)
+
+        progressive_neighbors = list(filter(lambda point: distance(
+            point, destination) < distance(self, destination), reference_neighbors))
+
+        # If there are more "progressive" neighbors (neighbors closer to the destination), route like a router
+        if len(progressive_neighbors) > len(reference_neighbors) / 2:
+            return True
+
+        return False
+
     # Override
-    def route(self, destination, path=None):
+    def route(self, destination, points, path=None):
 
         # INITIALIZATION
 
@@ -194,9 +227,9 @@ class LandingPoint(Point):
 
         # CUTOFFS
 
-        # if time.time() - session['start_time'] > MAX_TIME:
-        #     print("Maximum time exceeeded, rerouting...")
-        #     return path[0].init_routing(destination)
+        if time.time() - session['start_time'] > MAX_TIME:
+            print("Maximum time exceeeded, rerouting...")
+            return path[0].init_routing(destination)
 
         if len(path) > MAX_PATH_LENGTH:
             print("Max path length reached")
@@ -207,11 +240,12 @@ class LandingPoint(Point):
             print("Circular landing point path")
             return False
 
-        # INTER-LANDMASS ROUTING
-        if same_landmass(self, destination):
-            return Point.route(self, destination, path=path)
+        # REGULAR CASE
+        if self.treat_as_router(destination, path, points):
+            print("Same-landmass routing")
+            return Point.route(self, destination, points, path=path)
 
-        # TRANS-LANDMASS ROUTING
+        # OVERSEAS CASE
         else:
             print("Trans-landmass routing")
 
@@ -233,11 +267,17 @@ class LandingPoint(Point):
                               candidate.slug)
 
                 candidate_path = candidate.endpoint.route(
-                    destination, path + [self, cable])
+                    destination, points, path + [self, cable])
 
                 if candidate_path:
                     return candidate_path
 
+            # Try routing as a point
+            print("Trans-landmass routing invalid, trying same-landmass routing...")
+            candidate = Point.route(self, destination, points, path=path)
+
+            if candidate:
+                return candidate
             # No candidates could be found
             return False
 
@@ -386,4 +426,4 @@ def find_paths(start, destination, path):
         candidate.set_endpoint()
 
     # Filter paths that progress to the destination
-    return list(filter(lambda candidate: candidate.endpoint != None and distance(candidate.endpoint, destination) <= current_distance - 1, candidates))
+    return list(filter(lambda candidate: candidate.endpoint != None and not same_landmass(start, candidate.endpoint) and candidate.endpoint not in path and distance(candidate.endpoint, destination) <= current_distance - 1, candidates))
