@@ -62,15 +62,20 @@ body {
   border: 2px dashed #a51c31 !important;
 }
 
-#legend {
+#info-container {
   position: fixed;
   bottom: 25px;
   left: 325px;
   z-index: 1;
+
+}
+
+#legend {
   background: white;
   border-radius: 20px;
   padding: 20px;
   height: 250px;
+  border: 5px solid #a51c31;
 }
 
 
@@ -81,12 +86,11 @@ body {
 @media (max-width: 767px) {
   #controller {
     width: 100%;
-    height: 300px;
-    bottom: 0;
+    height: 100%;
+    top: 0;
   }
   #map {
     left: 0;
-    bottom: 300px;
     height: fill;
     width: 100%;
   }
@@ -104,8 +108,13 @@ form {
   background: #9c4a56;
 }
 
-input[type="submit"] {
+input[type="submit"], button.btn {
   box-shadow: 0 0 20px white;
+}
+
+#about-button {
+  background-color: #a51c31 !important;
+  color: white;
 }
 
 input[type="submit"]:hover {
@@ -146,4 +155,13 @@ input[type="submit"]:hover {
 
 label {
   text-decoration: underline;
+}
+
+.modal-content {
+  width: 100%;
+  max-width: 800px;
+}
+
+.red-text {
+  color: #a51c31;
 }
