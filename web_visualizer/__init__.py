@@ -16,9 +16,8 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
 # app.config['PROFILE'] = True
-# # Show 5 most expensive functions for each request
 # app.wsgi_app = ProfilerMiddleware(
-#     app.wsgi_app, restrictions=[3])
+#     app.wsgi_app, restrictions=[10])
 
 import web_visualizer.py_main.route  # nopep8
 import web_visualizer.py_main.request  # nopep8

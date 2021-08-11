@@ -29,19 +29,33 @@
     
     {% import 'controller.html' as controller %}
     {% import 'animation_options.html' as animation_options %}
+    {% import 'about.html' as about %}
+
 
     {{ controller.controller() }}
     {{ animation_options.animation_options() }}
+    {{ about.about() }}
 
     <!-- Errors -->
     <div class="alert alert-danger alert-dismissible fade" role="alert">
       <!-- Add the template into here -->
     </div>
-
-    <div id="legend">
-      <h4 class="text-center text-dark" style="text-decoration: underline;">Legend</h4>
-      <img src="../static/images/legend.png" height="185px" alt="legend">
+    
+    <div id="info-container" class="d-none d-md-block">
+      <div id="legend">
+        <h4 class="text-center text-dark" style="text-decoration: underline;">Legend</h4>
+        <img class="mb-3" src="../static/images/legend.png" height="185px" alt="legend">
+      </div>
+      <div class="d-grid" id="about-this-app">
+        <button class="btn mt-3" data-bs-toggle="modal" data-bs-target="#about-modal" id="about-button">
+          <span class="material-icons-outlined" style="font-size: 14px;">
+            info
+          </span>
+          About this App
+        </button>
+      </div>
     </div>
+
 
     
     <!-- Replace with a loading screen -->
@@ -57,7 +71,7 @@
 
 
     <a href='https://db-ip.com' id="db-ip">IP Geolocation by DB-IP</a>
-    <div id="coordinates">
+    <div id="coordinates" class="d-none d-md-block">
       Latitude:
       Longitude:
     </div>

@@ -82,3 +82,4 @@ function initMap() {
   }
 }
 
+loadModal();
