@@ -8,6 +8,14 @@ async function animate(client_data, server_data) {
   
   // Generate and animate routes in both directions
   const routeAnimation = new RouteAnimation(client_data, server_data, numPackets);
+
+  document.querySelector("#stop-animation").addEventListener('click', (e) => {
+    console.log("animation stopping")
+    e.preventDefault();
+    stop_animation(routeAnimation.infoWindow);
+  });
+
+
   await routeAnimation.animate("request");
   await routeAnimation.animate("response");
 
@@ -24,39 +32,42 @@ class RouteAnimation {
   // animate : Direction -> _
   // Provide a one-way animation of an HTTP-request
   async animate(direction) {
-    // Initialize the content of the info window
-    if (direction == "request")
-      this.infoWindow = await init_info_window(destinationMarker);
-    else
-      this.infoWindow = await init_info_window(userMarker);
+    if (animation_flag) {
+      // Initialize the content of the info window
+      if (direction == "request")
+        this.infoWindow = await init_info_window(destinationMarker);
+      else
+        this.infoWindow = await init_info_window(userMarker);
 
-    // Animation logic
-    await this.animate_routes(direction);
+      if (animation_flag)
+        // Animation logic
+        await this.animate_routes(direction);
 
-    // Close info window
-    this.infoWindow.close()
+      // Close info window
+      this.infoWindow.close()
+    }
   }
   // update_info_window : Direction Number -> _
   // Update the info window in realtime to match the request on its current packet _packet_number_
   async update_info_window(direction, packet_number) {
-    return new Promise(resolve => {
-      $.post({
-        url: $SCRIPT_ROOT + '/info-window',
-        data: {
-          direction,
-          total_packets: this.num_routes,
-          packets_received: packet_number,
-          client_data: JSON.stringify(this.client_data),
-          server_data: JSON.stringify(this.server_data),
-        },
-        success: (template) => {
-          this.infoWindow.setContent(template);
-          resolve();
-        }
-      });
-    })
-
-
+    if (animation_flag) {
+      return new Promise(resolve => {
+        $.post({
+          url: $SCRIPT_ROOT + '/info-window',
+          data: {
+            direction,
+            total_packets: this.num_routes,
+            packets_received: packet_number,
+            client_data: JSON.stringify(this.client_data),
+            server_data: JSON.stringify(this.server_data),
+          },
+          success: (template) => {
+            this.infoWindow.setContent(template);
+            resolve();
+          }
+        });
+      })
+    }
   }
   
   // animate_routes : Direction -> _
