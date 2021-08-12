@@ -8,6 +8,13 @@ async function animate(client_data, server_data) {
   
   // Generate and animate routes in both directions
   const routeAnimation = new RouteAnimation(client_data, server_data, numPackets);
+
+  document.querySelector("#stop-animation").addEventListener('click', (e) => {
+    e.preventDefault();
+    stop_animation(routeAnimation.infoWindow);
+  });
+
+
   await routeAnimation.animate("request");
   await routeAnimation.animate("response");
 
@@ -20,93 +27,93 @@ class RouteAnimation {
     this.client_data = client_data;
     this.server_data = server_data;
     this.num_routes = num_routes;
+    this.routes = [];
+    this.blurred_lines = [];
   }
   // animate : Direction -> _
   // Provide a one-way animation of an HTTP-request
   async animate(direction) {
-    // Initialize the content of the info window
-    if (direction == "request")
-      this.infoWindow = await init_info_window(destinationMarker);
-    else
-      this.infoWindow = await init_info_window(userMarker);
+    if (animation_flag) {
+      // Initialize the content of the info window
+      if (direction == "request")
+        this.infoWindow = await init_info_window(destinationMarker);
+      else
+        this.infoWindow = await init_info_window(userMarker);
 
-    // Animation logic
-    await this.animate_routes(direction);
+      if (animation_flag) {
+        this.update_info_window(direction, 0);
+        await this.animate_routes(direction);
+        clear_lines(this.blurred_lines);
+        this.routes = [];
+        this.blurred_lines = [];
+      }
 
-    // Close info window
-    this.infoWindow.close()
+      // Close info window
+      this.infoWindow.close()
+    }
   }
   // update_info_window : Direction Number -> _
   // Update the info window in realtime to match the request on its current packet _packet_number_
   async update_info_window(direction, packet_number) {
-    return new Promise(resolve => {
-      $.post({
-        url: $SCRIPT_ROOT + '/info-window',
-        data: {
-          direction,
-          total_packets: this.num_routes,
-          packets_received: packet_number,
-          client_data: JSON.stringify(this.client_data),
-          server_data: JSON.stringify(this.server_data),
-        },
-        success: (template) => {
-          this.infoWindow.setContent(template);
-          resolve();
-        }
-      });
-    })
-
-
+    if (animation_flag) {
+      return new Promise(resolve => {
+        $.post({
+          url: $SCRIPT_ROOT + '/info-window',
+          data: {
+            direction,
+            total_packets: this.num_routes,
+            packets_received: packet_number,
+            client_data: JSON.stringify(this.client_data),
+            server_data: JSON.stringify(this.server_data),
+          },
+          success: (template) => {
+            this.infoWindow.setContent(template);
+            resolve();
+          }
+        });
+      })
+    }
   }
   
   // animate_routes : Direction -> _
   // Initialize the animation of routes in _direction_
   async animate_routes(direction) {
-    await this.animate_routes_accum(direction, this.num_routes, []);
-
-  }
-
-  // animate_routes_accum : Direction Number [List-of Coordinate] -> Boolean
-  // ACCUMULATOR: _num_routes_ specifies the number of routes left to animate
-  // ACCUMULATOR: _lines_ contains all lines drawn as part of the routes so far
-  async animate_routes_accum(direction, num_routes, lines) {
-    let packet_number = this.num_routes - num_routes; 
-    await this.update_info_window(direction, packet_number);
-
-    if (num_routes == 0) {
-      await timeout(100);
-      clear_lines(lines);
-      return;
-    } else {
-      return new Promise(resolve => {
+    return new Promise(resolve => {
+      for (let i = 0; i < this.num_routes; i++) {
         $.getJSON(
           $SCRIPT_ROOT + "/route",
           { direction },
           (route) => {
-            if (animation_flag) {
-              this.animate_route(route).then((route_lines) => {
-                this.animate_routes_accum(direction, num_routes - 1, lines.concat(route_lines))
-                  .then(resolve)
-              })
-            } else {
-              clear_lines(lines);
-              resolve();
-            }
+            this.routes.push(route);
+            if (i == 0)
+              this.animate_route(0, direction, resolve);
           }
-        ).fail(handleError);
-      });
-    }
+        ).fail(handleError)
+      }
+    })
   }
-  // animate_route : Route -> _
-  // Draws the lines representing one particular _route_ (of Points and Cables)
-  async animate_route(route) {
+
+  // animate_route : Index Direction [Promise Resolve] -> _
+  // Draws the lines representing one particular route at _index_ (of Points and Cables)
+  async animate_route(route_index, direction, resolve) {
+
+    this.update_info_window(direction, route_index);
+
+    if (route_index == this.num_routes)
+      resolve();
+
+    // Wait until the route exists
+    while (route_index >= this.routes.length) {
+      await timeout(100);
+    }
+
+    const route = this.routes[route_index];
 
     let lines = [];
     let blurred_lines = [];
     let color = random_color();
 
     const animate_connection = async (index) => {
-
       // cable_path : Cable -> [List-of Coordinate]
       // Creates a path of the coordinates associated with _cable_
       const cable_path = (cable) => {
@@ -168,10 +175,11 @@ class RouteAnimation {
 
     if (animation_flag) {
       await animate_connection(0);
-      return blurred_lines;
+      this.blurred_lines = this.blurred_lines.concat(blurred_lines);
+      this.animate_route(route_index + 1, direction, resolve);
     }
     else
-      return [];
+      return;
   }
 }
 
