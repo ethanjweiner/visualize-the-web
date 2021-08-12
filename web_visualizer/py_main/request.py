@@ -9,6 +9,8 @@ import socket
 import ipinfo
 import requests
 import json
+import random
+
 from urllib.parse import urlparse
 
 
@@ -17,13 +19,19 @@ def http_request():
     # 1. Run the AJAX request, & retrieve response data
     client_ip_details = get_ip_details()
 
+    request_details = json.loads(request.form.get("request_details"))
+
     client_data = {
-        "request_details": json.loads(request.form.get("request_details")),
+        "request_details": request_details,
         "ip_details": client_ip_details
     }
 
-    server_data = simulate_http_request(
-        client_data["request_details"]["request_url"], client_data["request_details"]["request_method"], client_data["request_details"]["request_content"])
+    if request_details["is_random"]:
+        client_data["request_details"]["request_url"] = None
+        server_data = choose_random_destination(request_details["num_routers"])
+    else:
+        server_data = simulate_http_request(
+            client_data["request_details"]["request_url"], client_data["request_details"]["request_method"], client_data["request_details"]["request_content"])
 
     # Store the client & server data in a session for routing
     session['client_data'] = client_data
@@ -33,7 +41,7 @@ def http_request():
     return jsonify(client_data=client_data, server_data=server_data)
 
 
-# simulate_http_request
+# simulate_http_request : String String [Maybe String] -> Dictionary
 # Simulates an HTTP request, & subsequently retrieves information about the server and its response
 def simulate_http_request(request_url, request_method, request_content=None):
     # Retrieve response content
@@ -57,6 +65,24 @@ def simulate_http_request(request_url, request_method, request_content=None):
             "content-type": response.headers["content-type"]
         },
         "ip_details": ip_details
+    }
+
+
+# choose_random_destination
+# Chooses a random router to use as the deestination
+def choose_random_destination(num_routers):
+    first_id = Router.query.first().id
+    rand_id = random.randint(first_id, first_id + num_routers)
+    router = Router.query.get(rand_id)
+
+    return {
+        "ip_details": {
+            "ip": router.ip,
+            "continent": router.continent_code,
+            "latitude": router.latitude,
+            "longitude": router.longitude
+
+        }
     }
 
 
