@@ -131,7 +131,7 @@ def get_weight(point, destination, cmp_distance):
     if diff <= -1 and point.type == "landing_point":
         return 0
 
-    return (diff + 1) * 5
+    return (diff + 1) * 2
 
 
 # random_radius : Point Point -> Number
