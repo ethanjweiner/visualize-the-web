@@ -1,6 +1,6 @@
 {% macro controller() -%}
 <div id="controller" class="mb-5">
-    <h1 class="text-center pt-3 d-none d-md-block">Web Visualizer</h1>
+    <h1 class="text-center pt-3 d-md-block">Web Visualizer</h1>
     <hr class="d-none d-md-block" />
     <p class="mx-2 mt-3 mt-md-0">
       Use the form below to simulate an HTTP request:
@@ -15,6 +15,17 @@
         style="font-family: arial; font-size: 14px"
         value="{% if url %}{{url}}{% else %}https://{% endif %}"
       />
+
+      <div class="form-check mt-2">
+        <input
+          type="checkbox"
+          class="form-check-input"
+          name="random-router-choice"
+          id="random-router-choice"
+        />
+        <label style="text-decoration: none !important;" for="random-router-choose" class="form-check-label">Randomly Choose a Server to Request</label>
+      </div>
+
       <label class="form-label mt-2" for="request-action">Action</label>
       <div class="form-check">
         <input
@@ -78,7 +89,8 @@
       </form>
     </div>
     <hr class="d-none d-md-block">
-    <div id="add-marker">
+    <!-- TEMPORARY COORDINATE FORM -->
+    <!-- <div id="add-marker">
       <h4 class="text-center">Add Marker</h4>
       <form class="mt-3 mx-2 p-2 rounded" id="coord-form">
         <label for="latitude" class="form-label">Latitude</label>
@@ -93,6 +105,6 @@
           />
         </div>
       </form>
-    </div>
+    </div> -->
   </div>
   {%- endmacro %}

@@ -24,17 +24,15 @@ def routes():
     server_router = Router(ip=server_data['ip_details']['ip'], latitude=server_data['ip_details']['latitude'],
                            longitude=server_data['ip_details']['longitude'], continent_code=server_data['ip_details']['continent'])
 
-    points = Point.query.all()
-
     route = False
 
     if direction == "request":
         # Set up a timer here?
         route = client_router.init_routing(
-            server_router, points)
+            server_router)
     else:
         route = server_router.init_routing(
-            client_router, points)
+            client_router)
 
     if len(route):
         return jsonify(list(map(lambda node: node.toJson(), route)))
