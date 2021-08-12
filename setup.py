@@ -9,8 +9,9 @@ setup(
         'jsmin',
         'ipinfo',
         'flask_assets',
-        'ipinfo',
         'requests',
-        'pycountry_convert'
+        'pycountry_convert',
+        'numpy',
+        'flask_sqlalchemy'
     ]
 )
