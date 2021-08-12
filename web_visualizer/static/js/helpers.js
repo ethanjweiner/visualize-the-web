@@ -134,22 +134,6 @@ function initListeners() {
     document.querySelector("#num-packets-output").value = num_packets;
   });
   
-  // Coordinate form  
-  $('#coord-form').bind("submit", function(e) {
-    e.preventDefault()
-
-    const latitude = parseFloat($('input[name="latitude"]').val())
-    const longitude = parseFloat($('input[name="longitude"]').val())
-
-    const marker = new google.maps.Marker({
-      position: { lat: latitude, lng: longitude },
-      map
-    })
-
-    marker.setMap(map);
-  })
-
-  
   // Listen for request
   $("#request-form").bind("submit", function (e) {
     e.preventDefault();
@@ -158,8 +142,12 @@ function initListeners() {
 
     // Remove the marker for the previous destination
     if (destinationMarker) destinationMarker.setMap(null);
-  
-    const request_details = {
+
+    var request_details;
+
+    request_details = {
+      is_random: random_router_choice,
+      num_routers: points.num_routers,
       request_url: $('input[name="request-url"]').val(),
       request_method : document.querySelector("#get-radio").checked ? "GET" : "POST",
       request_content: $('textarea[name="request-content"]').val(),
