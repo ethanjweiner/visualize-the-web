@@ -15,6 +15,17 @@
         style="font-family: arial; font-size: 14px"
         value="{% if url %}{{url}}{% else %}https://{% endif %}"
       />
+
+      <div class="form-check mt-2">
+        <input
+          type="checkbox"
+          class="form-check-input"
+          name="random-router-choice"
+          id="random-router-choice"
+        />
+        <label style="text-decoration: none !important;" for="random-router-choose" class="form-check-label">Randomly Choose a Server to Request</label>
+      </div>
+
       <label class="form-label mt-2" for="request-action">Action</label>
       <div class="form-check">
         <input
