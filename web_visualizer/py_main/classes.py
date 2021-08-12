@@ -27,7 +27,9 @@ class Point(db.Model):
     def __repr__(self):
         return f"Point{self.type, self.id, self.latitude, self.longitude, self.continent_code}"
 
-    def init_routing(self, destination):
+    def init_routing(self, destination, tries=0):
+        if tries == 2:
+            abort(500, "Sorry, no route to the destination could be found. Please try a different domain, change the number of routers, or refresh.")
         print("Routing initialized....")
 
         points = Point.query.all()
@@ -45,9 +47,8 @@ class Point(db.Model):
             for e in route:
                 if isinstance(e, Cable):
                     e.find_nodes()
-
         else:
-            abort(500, "No route to the destination could be found.")
+            abort(500, "Sorry, no route to the destination could be found. Please try a different domain, increase the number of routers, or refresh.")
 
         return route
 
@@ -58,7 +59,7 @@ class Point(db.Model):
     # - [Circular case] Terminate the route
     # - [Non-circular case] Generally, the chosen neighbor is closer to the destination
     # HEURISTIC: Distance from neighbor to destination (lower is better)
-    def route(self, destination, points, path=None):
+    def route(self, destination, points, path=None, tries=0):
 
         # INITIALIZATION
 
@@ -69,13 +70,13 @@ class Point(db.Model):
 
         if time.time() - session['start_time'] > MAX_TIME:
             print("Maximum time exceeeded, rerouting...")
-            return path[0].init_routing(destination)
+            return path[0].init_routing(destination, tries=tries+1)
 
         # MAX CASE
 
         if len(path) > MAX_PATH_LENGTH:
             print("Max path length reached")
-            return path[0].init_routing(destination)
+            return path[0].init_routing(destination, tries=tries+1)
 
         radius_increment = random_radius(session['total_distance'])
 
@@ -98,7 +99,7 @@ class Point(db.Model):
                     return False
 
                 candidate_path = self.route_list(
-                    destination, radius_increment, points, path=path+[self])
+                    destination, radius_increment, points, path=path+[self], tries=tries)
 
                 radius_increment += 0.5
 
@@ -106,7 +107,7 @@ class Point(db.Model):
 
     # route_list : Point Point Number [List-of Point] -> [Maybe List-of Point, Cable]
     # Attempts to find a path from _origin_ to _destination_, testing all neighboring routers as specified by _radius_
-    def route_list(self, destination, radius, points, path=None):
+    def route_list(self, destination, radius, points, path=None, tries=0):
 
         candidate_points = self.neighbors(destination, path, radius, points)
         cmp_distance = distance(self, destination)
@@ -125,27 +126,12 @@ class Point(db.Model):
                 return False
 
             candidate_path = candidate.route(
-                destination, points, path=path)
+                destination, points, path=path, tries=tries)
 
             if candidate_path:
                 return candidate_path
 
             candidate_points.remove(candidate)
-
-        return False
-
-        # CHOOSE A NEIGHBOR, STARTING W/ THOSE CLOSEST TO DESTINATION (faster)
-        candidate_points.sort(key=lambda point: distance(point, destination))
-
-        candidate_path = False
-
-        for candidate in candidate_points:
-
-            candidate_path = candidate.route(
-                destination, points, path=path)
-
-            if candidate_path:
-                return candidate_path
 
         return False
 
@@ -206,19 +192,19 @@ class LandingPoint(Point):
 
         # Call superclass method
         reference_neighbors = Point.neighbors(
-            self, destination, path, 10, points)
+            self, destination, path, 15, points)
 
         progressive_neighbors = list(filter(lambda point: distance(
             point, destination) < distance(self, destination), reference_neighbors))
 
-        # If there are more "progressive" neighbors (neighbors closer to the destination), route like a router
-        if len(progressive_neighbors) > len(reference_neighbors) / 2:
+        # If there are enough "progressive" neighbors (neighbors closer to the destination), route like a router
+        if len(progressive_neighbors) > len(reference_neighbors) / 4:
             return True
 
         return False
 
     # Override
-    def route(self, destination, points, path=None):
+    def route(self, destination, points, path=None, tries=0):
 
         # INITIALIZATION
 
@@ -229,11 +215,11 @@ class LandingPoint(Point):
 
         if time.time() - session['start_time'] > MAX_TIME:
             print("Maximum time exceeeded, rerouting...")
-            return path[0].init_routing(destination)
+            return path[0].init_routing(destination, tries=tries)
 
         if len(path) > MAX_PATH_LENGTH:
             print("Max path length reached")
-            return path[0].init_routing(destination)
+            return path[0].init_routing(destination, tries=tries)
 
         # CIRCULAR CASE
         if self in path:
@@ -243,7 +229,7 @@ class LandingPoint(Point):
         # REGULAR CASE
         if self.treat_as_router(destination, path, points):
             print("Same-landmass routing")
-            return Point.route(self, destination, points, path=path)
+            return Point.route(self, destination, points, path=path, tries=tries)
 
         # OVERSEAS CASE
         else:
@@ -267,14 +253,15 @@ class LandingPoint(Point):
                               candidate.slug)
 
                 candidate_path = candidate.endpoint.route(
-                    destination, points, path + [self, cable])
+                    destination, points, path=path + [self, cable], tries=tries)
 
                 if candidate_path:
                     return candidate_path
 
             # Try routing as a point
             print("Trans-landmass routing invalid, trying same-landmass routing...")
-            candidate = Point.route(self, destination, points, path=path)
+            candidate = Point.route(
+                self, destination, points, path=path, tries=tries)
 
             if candidate:
                 return candidate

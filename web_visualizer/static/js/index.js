@@ -83,3 +83,9 @@ function initMap() {
 }
 
 loadModal();
+
+document.querySelector("#random-router-choice").addEventListener('click', e => {
+  const request_url_field = document.querySelector("#request-url");
+  request_url_field.disabled = !request_url_field.disabled;
+  random_router_choice = !random_router_choice.router_choice;
+})
