@@ -12,6 +12,7 @@ const PACKET_PATH = "M2.941 8c-2.941 0-1.47.779 0 1.974l22.059 16.789 22.059-16.
 
 var animation_flag = true;
 var auto_focus = false;
+var random_router_choice = false;
 var userPosition = {}
 var destinationPosition = {}
 let points;
