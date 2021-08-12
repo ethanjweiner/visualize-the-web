@@ -100,10 +100,12 @@ function start_animation() {
   animation_flag = true;
 }
 
-function stop_animation() {
+function stop_animation(infoWindow) {
   animation_flag = false;
   document.querySelector("#controller").classList.remove("d-none");
   document.querySelector("#animation-options").classList.add("d-none");
+  if (infoWindow)
+    infoWindow.close();
 }
 
 
@@ -164,11 +166,6 @@ function initListeners() {
         animate(data.client_data, data.server_data, map);
       }
     ).fail(handleError);
-  });
-
-  document.querySelector("#stop-animation").addEventListener('click', (e) => {
-    e.preventDefault();
-    stop_animation();
   });
 
   document.querySelector('#auto-focus').addEventListener('input', () => {
