@@ -1,11 +1,10 @@
 .vscode/
 venv/
-__pychache__/
+**/__pychache__/
 /web_visualizer/data/
-node_modules/
+**/node_modules/
 bundle.js
-static/bundle.js
-web_visualizer/Web Visualizer.code-workspace
-.webassets-cache
+*.code-workspace
+**/.webassets-cache/
 
 # !ip_addresses.sqlite3 --- Include this as part of the server
