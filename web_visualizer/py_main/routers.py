@@ -12,9 +12,8 @@ import urllib.request
 import json
 import os
 
+
 # Routers: Generates GeoJSON locations of _num_routers_ routers
-
-
 @app.route("/routers")
 def routers():
 
