@@ -32,3 +32,20 @@ def routers():
 
     # Query this new set of points from the database
     return jsonify(list(map(lambda point: point.toJson(), Point.query.all())))
+
+
+# store_routers : Number -> [List-of Router]
+# Uses the ip_addresses database to generate a list of Routers, of size _num_routers_
+def store_routers(num_routers):
+
+    ip_addresses_db = Database(IP_ADDRESSES_PATH)
+    routers = []
+
+    # Change to insert num_routers as argument instead (to avoid database manipulation)
+    for loc in ip_addresses_db.query_db('SELECT * FROM ip_addresses ORDER BY RANDOM() LIMIT ?',
+                                        [num_routers]):
+        router = Router(ip=loc["ip"], latitude=float(loc["latitude"]), longitude=float(loc["longitude"]),
+                        continent_code=loc["continent_id"])
+        db.session.add(router)
+
+    db.session.commit()
