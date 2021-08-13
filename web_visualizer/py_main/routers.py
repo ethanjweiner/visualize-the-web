@@ -6,11 +6,15 @@ from web_visualizer.py_auxiliary.constants import *
 
 from flask import jsonify, request, g, abort
 
+from itertools import combinations
+
 import urllib.request
 import json
-
+import os
 
 # Routers: Generates GeoJSON locations of _num_routers_ routers
+
+
 @app.route("/routers")
 def routers():
 
@@ -40,8 +44,8 @@ def store_routers(num_routers):
     # Change to insert num_routers as argument instead (to avoid database manipulation)
     for loc in ip_addresses_db.query_db('SELECT * FROM ip_addresses ORDER BY RANDOM() LIMIT ?',
                                         [num_routers]):
-        db.session.add(
-            Router(ip=loc["ip"], latitude=loc["latitude"], longitude=loc["longitude"],
-                   continent_code=loc["continent_id"]))
+        router = Router(ip=loc["ip"], latitude=float(loc["latitude"]), longitude=float(loc["longitude"]),
+                        continent_code=loc["continent_id"])
+        db.session.add(router)
 
     db.session.commit()
