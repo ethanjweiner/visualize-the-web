@@ -1,22 +1,11 @@
-**/web_visualizer/node_modules
-/web_visualizer/node_modules/**
-**/.vscode
-/.vscode/**
-**/venv
-/venv/**
-**/web_visualizer/.webassets-cache
-/web_visualizer/.webassets-cache/**
-**/static/bundle.js
-/static/bundle.js/**
-**/web_visualizer/__pychache__
-/web_visualizer/__pychache__/**
-**/web_visualizer.egg-info
-/web_visualizer.egg-info/**
-**/web_visualizer/static/.webassets-cache
-/web_visualizer/static/.webassets-cache
-**/web_visualizer/data
-/web_visualizer/data/**
-/web_visualizer/config.py
-/web_visualizer/temporary.py
-/web_visualizer/profile/**
-**/web_visualizer/profile/
+.vscode/
+venv/
+__pychache__/
+/web_visualizer/data/
+node_modules/
+bundle.js
+static/bundle.js
+web_visualizer/Web Visualizer.code-workspace
+.webassets-cache
+
+# !ip_addresses.sqlite3 --- Include this as part of the server

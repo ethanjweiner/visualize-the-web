@@ -1,4 +1,4 @@
-from math import cos, asin, sqrt, pi
+from math import cos, asin, sqrt
 from math import isclose
 import random
 import pycountry_convert as pc
@@ -14,16 +14,11 @@ def same_landmass(p1, p2):
 
 
 # distance: Point Point -> Number
-# Determines the geographically accurate distance between _p1_ and _p2_
+# Determines the geographically accurate distance between _p1_ and _p2_, in degrees
 def distance(p1, p2):
-    lat1 = float(p1.latitude)
-    lat2 = float(p2.latitude)
-    lon1 = float(p1.longitude)
-    lon2 = float(p2.longitude)
-
-    p = pi/180
-    a = 0.5 - cos((lat2-lat1)*p)/2 + cos(lat1*p) * \
-        cos(lat2*p) * (1-cos((lon2-lon1)*p))/2
+    p = 0.017453292519943295
+    a = 0.5 - cos((p2.latitude-p1.latitude)*p)/2 + cos(p1.latitude*p) * \
+        cos(p2.latitude*p) * (1-cos((p2.longitude-p1.longitude)*p))/2
     return 116 * asin(sqrt(a))
 
 
@@ -137,8 +132,7 @@ def get_weight(point, destination, cmp_distance):
 # random_radius : Point Point -> Number
 # Generate a random starting radius, based on the total _distance_ from the starting point to the destination
 def random_radius(distance):
-    rand = random.random() * distance / 3 + \
-        session['total_distance'] / 10  # At least 0.5
+    rand = random.random() * distance / 3 + distance / 10  # At least 0.5
 
     rand = rand if rand < 15 else 15
     rand = rand if rand > 2 else 2
