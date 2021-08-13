@@ -7,6 +7,7 @@ async function timeout(ms) {
 // handleError : Data -> _
 // Upon an error with _data_, display an alert modal
 function handleError(data) {
+
   stop_animation();
   // Display alert
   const alert = document.querySelector('.alert');
@@ -102,6 +103,7 @@ function start_animation() {
 
 function stop_animation(infoWindow) {
   animation_flag = false;
+  loadingSpinner.style.zIndex = 0;
   document.querySelector("#controller").classList.remove("d-none");
   document.querySelector("#animation-options").classList.add("d-none");
   if (infoWindow)
@@ -158,11 +160,13 @@ function initListeners() {
     };
   
     start_animation();
+    loadingSpinner.style.zIndex = 3;
 
     $.post(
       $SCRIPT_ROOT + "/request",
       { request_details: JSON.stringify(request_details) },
       function (data) {
+        loadingSpinner.style.zIndex = 0;
         animate(data.client_data, data.server_data, map);
       }
     ).fail(handleError);
@@ -172,4 +176,68 @@ function initListeners() {
     auto_focus = !auto_focus;
   });
 
+}
+
+// info_window_content : Direction Data -> HTML
+// Provides a template of an info window with the specified _direction_, filling with _data_
+function info_window_content(direction, data) {
+  if (direction == "request") {
+    return `
+      <div id="server-info-window" class="text-dark">
+        <p>Packets Received: &nbsp;${data.packets_received}/${data.total_packets}</p>
+        <h5 class="text-primary">Server Info</h5>
+        <ul>
+          <li class="text-dark">
+            <span class="text-dark" style="text-decoration: underline;">IP</span>: &nbsp;${data.server_data.ip_details.ip}
+          </li>
+      ` + 
+      (data.server_data.ip_details.city ? `
+        <li class="text-dark">
+          <span class="text-dark" style="text-decoration: underline;">City</span>: &nbsp;${data.server_data.ip_details.city}
+        </li>` : '') + 
+      (data.server_data.ip_details.region ? `
+        <li class="text-dark">
+          <span class="text-dark" style="text-decoration: underline;">Region</span>: &nbsp;${data.server_data.ip_details.region}
+        </li>` : '') + 
+      (data.server_data.ip_details.country ? `
+        <li class="text-dark">
+          <span class="text-dark" style="text-decoration: underline;">Country</span>: &nbsp;${data.server_data.ip_details.country}
+        </li>` : '') + `
+      </ul>
+      <h5 class="text-primary">Request Details</h5>
+      <ul>
+        <li class="text-dark"><span class="text-dark" style="text-decoration: underline;">Return IP</span>: &nbsp;${data.client_data.ip_details.ip}</li>
+        <li class="text-dark"><span class="text-dark" style="text-decoration: underline;">Method</span>: &nbsp;${data.client_data.request_details.request_method}</li>` 
+        + (data.client_data.request_details.request_url ? `
+          <li class="text-dark"><span class="text-dark" style="text-decoration: underline;">Request URL</span>: &nbsp;${data.client_data.request_details.request_url}</li>
+        ` : '') + 
+      `</ul> </div>`
+  } else {
+    return `
+      <div id="client-info-window" class="text-dark">
+      <p>Packets Received: &nbsp;${data.packets_received}/${data.total_packets}</p>
+      <h5 class="text-primary">Client Info</h5>
+      <ul>
+        <li class="text-dark">
+          <span class="text-dark" style="text-decoration: underline;">IP</span>: &nbsp;${data.client_data.ip_details.ip}
+        </li>
+        <li class="text-dark">
+          <span class="text-dark" style="text-decoration: underline;">City</span>: &nbsp;${data.client_data.ip_details.city}
+        </li>
+        <li class="text-dark">
+          <span class="text-dark" style="text-decoration: underline;">Region</span>: &nbsp;${data.client_data.ip_details.region}
+        </li>
+        <li class="text-dark">
+          <span class="text-dark" style="text-decoration: underline;">Country</span>: &nbsp;${data.client_data.ip_details.country}
+        </li>
+      </ul>
+      <h5 class="text-primary">Response Details</h5>
+      <ul>
+        <li class="text-dark"><span class="text-dark" style="text-decoration: underline;">Return IP</span>: &nbsp;${data.server_data.ip_details.ip}</li>
+        `+ (data.server_data.response_details ? `
+        <li class="text-dark"><span class="text-dark" style="text-decoration: underline;">Content Type</span>: &nbsp;${data.server_data.response_details.content_type}</li>
+        <li class="text-dark"><span class="text-dark" style="text-decoration: underline;">Status Code</span>: &nbsp;${data.server_data.response_details.status_code}</li>
+        <li class="text-dark"><span class="text-dark" style="text-decoration: underline;">Response URL</span>: &nbsp;${data.server_data.response_details.response_url}</li>` : '')
+      + `</ul> </div>`      
+  }
 }
