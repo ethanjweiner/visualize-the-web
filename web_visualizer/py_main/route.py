@@ -19,10 +19,10 @@ def routes():
     client_data = session['client_data']
     server_data = session['server_data']
 
-    client_router = Router(ip=client_data['ip_details']['ip'], latitude=client_data['request_details']['latitude'],
-                           longitude=client_data['request_details']['longitude'], continent_code=client_data['ip_details']['continent'])
-    server_router = Router(ip=server_data['ip_details']['ip'], latitude=server_data['ip_details']['latitude'],
-                           longitude=server_data['ip_details']['longitude'], continent_code=server_data['ip_details']['continent'])
+    client_router = Router(ip=client_data['ip_details']['ip'], latitude=float(client_data['request_details']['latitude']),
+                           longitude=float(client_data['request_details']['longitude']), continent_code=client_data['ip_details']['continent'])
+    server_router = Router(ip=server_data['ip_details']['ip'], latitude=float(server_data['ip_details']['latitude']),
+                           longitude=float(server_data['ip_details']['longitude']), continent_code=server_data['ip_details']['continent'])
 
     route = False
 
