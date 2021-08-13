@@ -2,19 +2,19 @@ from flask import Flask, request, render_template, g, abort, redirect
 from flask_assets import Environment, Bundle
 from flask_sqlalchemy import SQLAlchemy
 
-
 import json
 import os
 import jsmin
 import itertools
-
-from werkzeug.middleware.profiler import ProfilerMiddleware
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///data/points.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
+# Optional Profiling
+
+# from werkzeug.middleware.profiler import ProfilerMiddleware
 # app.config['PROFILE'] = True
 # app.wsgi_app = ProfilerMiddleware(
 #     app.wsgi_app, restrictions=[10])
