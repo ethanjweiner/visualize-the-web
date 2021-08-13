@@ -47,22 +47,6 @@ def error():
     return render_template("error.html", error=error)
 
 
-# InfoWindow: Provides an HTML template for an info window
-@app.route("/info-window", methods=["POST"])
-def info_window():
-
-    direction = request.form.get("direction")
-    total_packets = request.form.get("total_packets")
-    packets_received = request.form.get("packets_received")
-    client_data = json.loads(request.form.get("client_data"))
-    server_data = json.loads(request.form.get("server_data"))
-
-    if direction == "request":
-        return render_template("info_windows/server_window.html", total_packets=total_packets, packets_received=packets_received, client_data=client_data, server_data=server_data)
-    else:
-        return render_template("info_windows/client_window.html", total_packets=total_packets, packets_received=packets_received, client_data=client_data, server_data=server_data)
-
-
 # close_connection
 # Closes the IP database when finished
 @app.teardown_appcontext
