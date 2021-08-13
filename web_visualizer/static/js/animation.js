@@ -18,6 +18,7 @@ async function animate(client_data, server_data) {
   await routeAnimation.animate("request");
   await routeAnimation.animate("response");
 
+  clear_lines(routeAnimation.blurred_lines);
   stop_animation();
 }
 
@@ -33,6 +34,9 @@ class RouteAnimation {
   // animate : Direction -> _
   // Provide a one-way animation of an HTTP-request
   async animate(direction) {
+
+    loadingSpinner.style.zIndex = 0;
+
     if (animation_flag) {
       // Initialize the content of the info window
       if (direction == "request")
@@ -40,38 +44,35 @@ class RouteAnimation {
       else
         this.infoWindow = await init_info_window(userMarker);
 
-      if (animation_flag) {
-        this.update_info_window(direction, 0);
-        await this.animate_routes(direction);
-        clear_lines(this.blurred_lines);
-        this.routes = [];
-        this.blurred_lines = [];
-      }
+      this.update_info_window(direction, 0);
+      await this.animate_routes(direction);
+      loadingSpinner.style.zIndex = 0;
+      clear_lines(this.blurred_lines);
+      this.routes = [];
+      this.blurred_lines = [];
 
       // Close info window
       this.infoWindow.close()
     }
+
+    clear_lines(this.blurred_lines);
+
   }
   // update_info_window : Direction Number -> _
   // Update the info window in realtime to match the request on its current packet _packet_number_
-  async update_info_window(direction, packet_number) {
+  update_info_window(direction, packet_number) {
+
     if (animation_flag) {
-      return new Promise(resolve => {
-        $.post({
-          url: $SCRIPT_ROOT + '/info-window',
-          data: {
-            direction,
-            total_packets: this.num_routes,
-            packets_received: packet_number,
-            client_data: JSON.stringify(this.client_data),
-            server_data: JSON.stringify(this.server_data),
-          },
-          success: (template) => {
-            this.infoWindow.setContent(template);
-            resolve();
-          }
-        });
-      })
+      const data = {
+        total_packets: this.num_routes,
+        packets_received: packet_number,
+        client_data: this.client_data,
+        server_data: this.server_data
+      };
+
+
+      let content = info_window_content(direction, data);
+      this.infoWindow.setContent(content);
     }
   }
   
@@ -84,6 +85,7 @@ class RouteAnimation {
           $SCRIPT_ROOT + "/route",
           { direction },
           (route) => {
+            loadingSpinner.style.zIndex = 0;
             this.routes.push(route);
             if (i == 0)
               this.animate_route(0, direction, resolve);
@@ -101,11 +103,14 @@ class RouteAnimation {
 
     if (route_index == this.num_routes)
       resolve();
+    
+    loadingSpinner.style.zIndex = 0;
 
     // Wait until the route exists
     while (route_index >= this.routes.length) {
       await timeout(100);
     }
+    loadingSpinner.style.zIndex = 0;
 
     const route = this.routes[route_index];
 
@@ -167,19 +172,24 @@ class RouteAnimation {
             return await animate_connection(index + 1);
           } else {
             clear_lines(lines);
+            clear_lines(this.blurred_lines);
+            clear_lines(blurred_lines);
             return blurred_lines;
           }
         }
       }
     }
 
+
     if (animation_flag) {
       await animate_connection(0);
-      this.blurred_lines = this.blurred_lines.concat(blurred_lines);
       this.animate_route(route_index + 1, direction, resolve);
+      this.blurred_lines = this.blurred_lines.concat(blurred_lines);
     }
-    else
-      return;
+    else {
+      clear_lines(blurred_lines);
+      clear_lines(this.blurred_lines);
+    }
   }
 }
 

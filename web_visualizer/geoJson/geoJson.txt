@@ -1,7 +1,0 @@
-This folder contains JSON data that defines where to place nodes (routers)
-on the map. This data is generated directly in Javascript.
-The fixed locations of oceanic cables are imported from an external database for usage.
-Importing all router locations is, for obvious reasons, highly impractical, so
-instead, the locations are semi-randomly generated, based on where Internet access is the highest.
-Instead of displaying every router, the map only displays a representative
-number of routers.
