@@ -1,0 +1,18 @@
+
+A Speed is an Integer, [1-20]
+INTERPRETATION: A Speed of _speed_ represents a speed of _speed_ iterations per second
+
+A Map represents the map generated via the Google Maps API
+
+A Direction is one of:
+- "request"
+- "request
+INTERPRETATION: The direction that the current HTTP request is being sent
+
+A Coordinate is a 2-Element List:
+Interpretation: [_lng_ _lat_] represents a coordinate with a longitude of _lng_ and latitude of _lat_
+
+A Route is a [List-of Point, Cable]
+INTERPRETATION: A route ready to be animated
+
+A Line represents a line on a Map as created by the Google Maps API
