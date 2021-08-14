@@ -46,7 +46,7 @@ body {
   margin-left: 20px;
   position: fixed;
   bottom: 25px;
-  height: 250px;
+  height: 240px;
   width: 285px;
   z-index: 1;
   color: white;
@@ -80,22 +80,6 @@ body {
 
 #controller::-webkit-scrollbar {
   display: none;
-}
-
-@media (max-width: 767px) {
-  #controller {
-    width: 100%;
-    height: 100%;
-    top: 0;
-  }
-  #map {
-    left: 0;
-    height: fill;
-    width: 100%;
-  }
-  .spinner-container {
-    left: 0px;
-  }
 }
 
 .form-control:focus {
@@ -163,4 +147,28 @@ label {
 
 .red-text {
   color: #a51c31;
+}
+
+/* Media Queries */
+
+@media (max-width: 767px) {
+  #controller {
+    width: 100%;
+    height: 100%;
+    top: 0;
+  }
+  #map {
+    left: 0;
+    height: fill;
+    width: 100%;
+  }
+  .spinner-container {
+    left: 0px;
+  }
+}
+
+@media (max-width: 575px) {
+  #animation-options {
+    height: 120px;
+  }
 }
