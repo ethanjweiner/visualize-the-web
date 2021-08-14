@@ -1,5 +1,6 @@
 .vscode/
 venv/
+*.pyc
 **/__pycache__/
 /web_visualizer/data/
 **/node_modules/
@@ -7,5 +8,11 @@ bundle.js
 *.code-workspace
 **/.webassets-cache/
 temporary.py
+instance/
+.coverage
+htmlcov/
+dist/
+build/
+*.egg-info/
 
 # !ip_addresses.sqlite3 --- Include this as part of the server
