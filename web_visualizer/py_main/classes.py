@@ -31,7 +31,7 @@ class Point(db.Model):
         if tries == 2:
             abort(500, "Sorry, no route to the destination could be found. Please try a different domain, change the number of routers, or refresh.")
 
-        points = Point.query.all()
+        points = retrieve_points()
         points.append(destination)
 
         session['start_time'] = time.time()
@@ -413,3 +413,14 @@ def find_paths(start, destination, path):
 
     # Filter to paths that progress to the destination
     return list(filter(lambda candidate: candidate.endpoint != None and not same_landmass(start, candidate.endpoint) and candidate.endpoint not in path and distance(candidate.endpoint, destination) <= current_distance - 1, candidates))
+
+
+# retrieve_points : _ -> Points
+# Retrieves all the points associated with a particular state of the application
+def retrieve_points():
+    landing_points = LandingPoint.query.all()
+    router_seed = session["router_seed"]
+    routers = []
+    for id in range(router_seed, router_seed + session["num_routers"]):
+        routers.append(Router.query.get(id))
+    return landing_points + routers

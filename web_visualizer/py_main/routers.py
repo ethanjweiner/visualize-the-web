@@ -4,7 +4,7 @@ from web_visualizer.py_auxiliary.database import Database
 from web_visualizer.py_auxiliary.helpers import *
 from web_visualizer.py_auxiliary.constants import *
 
-from flask import jsonify, request, g, abort
+from flask import jsonify, request, g, abort, session
 
 from itertools import combinations
 
@@ -17,34 +17,16 @@ import os
 @app.route("/routers")
 def routers():
 
-    num_routers = request.args.get("num_routers")
+    num_routers = int(request.args.get("num_routers"))
+    session["num_routers"] = num_routers
 
-    if Router.query.first() != None:
-        Router.query.delete()
+    seed = random_router_seed(num_routers)
+    session["router_seed"] = seed
 
-    # Randomly select & store routers
-    try:
-        store_routers(num_routers)
-    except Exception:
-        abort(
-            500, description="There was a database error when generating the routers. Please refresh.")
-
-    # Query this new set of points from the database
-    return jsonify(list(map(lambda point: point.toJson(), Point.query.all())))
-
-
-# store_routers : Number -> [List-of Router]
-# Uses the ip_addresses database to generate a list of Routers, of size _num_routers_
-def store_routers(num_routers):
-
-    ip_addresses_db = Database(IP_ADDRESSES_PATH)
     routers = []
 
-    # Change to insert num_routers as argument instead (to avoid database manipulation)
-    for loc in ip_addresses_db.query_db('SELECT * FROM ip_addresses ORDER BY RANDOM() LIMIT ?',
-                                        [num_routers]):
-        router = Router(ip=loc["ip"], latitude=float(loc["latitude"]), longitude=float(loc["longitude"]),
-                        continent_code=loc["continent_id"])
-        db.session.add(router)
+    for id in range(seed, seed + num_routers):
+        routers.append(Router.query.get(id))
 
-    db.session.commit()
+    # Query this new set of points from the database
+    return jsonify(list(map(lambda point: point.toJson(), LandingPoint.query.all()+routers)))
