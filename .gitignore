@@ -13,5 +13,3 @@ htmlcov/
 dist/
 build/
 *.egg-info/
-
-# !ip_addresses.sqlite3 --- Include this as part of the server
