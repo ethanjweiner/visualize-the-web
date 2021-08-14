@@ -171,4 +171,7 @@ label {
   #animation-options {
     height: 120px;
   }
+  #server-info-window p, #client-info-window p {
+    font-size: 10px;
+  } 
 }
