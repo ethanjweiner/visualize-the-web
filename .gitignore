@@ -2,7 +2,6 @@
 venv/
 *.pyc
 **/__pycache__/
-/web_visualizer/data/
 **/node_modules/
 bundle.js
 *.code-workspace
