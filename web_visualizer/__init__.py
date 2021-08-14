@@ -8,7 +8,8 @@ import jsmin
 import itertools
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///data/points.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get(
+    'DATABASE_URL') or 'sqlite:///data/points.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
@@ -45,15 +46,6 @@ def index():
 @app.route("/error")
 def error():
     return render_template("error.html", error=error)
-
-
-# close_connection
-# Closes the IP database when finished
-@app.teardown_appcontext
-def close_connection(exception):
-    ip_db = getattr(g, '_database', None)
-    if ip_db is not None:
-        ip_db.close()
 
 
 # Create database if not yet created
