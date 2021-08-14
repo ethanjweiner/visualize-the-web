@@ -67,7 +67,7 @@ function initMap() {
         handleError({
           code: 500,
           name: "Geolocation error",
-          description: "The Geolocation Service failed."
+          description: 'The Geolocation Service failed. Make sure you used "https", not "http" in the url.'
         })
       }
     );
