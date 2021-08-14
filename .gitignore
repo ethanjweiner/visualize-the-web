@@ -2,9 +2,9 @@
 venv/
 *.pyc
 **/__pycache__/
-/web_visualizer/data/
+# /web_visualizer/data/
 **/node_modules/
-bundle.js
+# bundle.js
 *.code-workspace
 **/.webassets-cache/
 temporary.py
