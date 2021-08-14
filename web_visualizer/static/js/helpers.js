@@ -248,3 +248,22 @@ function info_window_content(direction, data) {
       </div>`      
   }
 }
+
+// zoom_to_bounds : Coordinate Coordinate -> _
+// Fits the map into a rectangular area encompassing _c1_ and _c2_
+function zoom_to_bounds(c1, c2) {
+  const south = c1.latitude < c2.latitude ? c1.latitude : c2.latitude;
+  const north = c1.latitude > c2.latitude ? c1.latitude : c2.latitude;
+  const west = c1.longitude < c2.longitude ? c1.longitude : c2.longitude;
+  const east = c1.longitude > c2.longitude ? c1.longitude : c2.longitude;
+  var bounds = new google.maps.LatLngBounds();
+  bounds.extend(new google.maps.LatLng(south, west));
+  bounds.extend(new google.maps.LatLng(north, east));
+  let padding = {
+    bottom: 50,
+    left: 50,
+    right: 50,
+    top: 50
+  };
+  map.fitBounds(bounds, padding);
+}
