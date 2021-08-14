@@ -70,11 +70,10 @@ body {
 
 }
 
-#legend {
+.legend {
   background: white;
   border-radius: 20px;
   padding: 20px;
-  height: 210px;
   border: 5px solid #a51c31;
 }
 
