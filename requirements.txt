@@ -11,6 +11,7 @@ Flask==2.0.1
 Flask-Assets==2.0
 Flask-SQLAlchemy==2.5.1
 greenlet==1.1.0
+gunicorn==20.1.0
 idna==2.10
 iniconfig==1.1.1
 ipinfo==4.2.0
@@ -39,7 +40,7 @@ toml==0.10.2
 tornado==6.1
 typing-extensions==3.10.0.0
 urllib3==1.26.5
--e git+https://github.com/Ethanweiner20/web-visualizer.git@5a969d34a99a2228e4c15eb5d43e272887ee7bda#egg=web_visualizer
+-e git+https://github.com/Ethanweiner20/web-visualizer.git@9e9b0913790090b57dff80b7f65f06fc842d6644#egg=web_visualizer
 webassets==2.0
 Werkzeug==2.0.1
 yarl==1.6.3
