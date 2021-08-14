@@ -6,14 +6,19 @@
 
 .spinner-container {
   position: fixed;
+  display: flex;
   left: 300px;
   right: 0px;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
 }
 
 .spinner-border {
-  margin-top: 40%;
   width: 8rem;
   height: 8rem;
+  margin: 0;
+  padding: 0;
 }
 
 #map {
@@ -172,6 +177,6 @@ label {
     height: 120px;
   }
   #server-info-window p, #client-info-window p {
-    font-size: 10px;
+    font-size: 14px;
   } 
 }
