@@ -2,6 +2,9 @@
 // Using the _client_ & _server_ data retrieved upon the request, animates the routes on _map_
 async function animate(client_data, server_data) {
 
+  zoom_to_bounds({ longitude: client_data.ip_details.longitude, latitude: client_data.ip_details.latitude},
+                 { longitude: server_data.ip_details.longitude, latitude: server_data.ip_details.latitude});
+
   display_server(server_data);
 
   const numPackets = $('input#num-packets').val();
