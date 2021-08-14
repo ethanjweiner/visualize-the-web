@@ -24,6 +24,7 @@ numpy==1.21.1
 packaging==20.9
 pluggy==0.13.1
 pprintpp==0.4.0
+psycopg2==2.9.1
 py==1.10.0
 pycodestyle==2.7.0
 pycountry==20.7.3
@@ -40,7 +41,6 @@ toml==0.10.2
 tornado==6.1
 typing-extensions==3.10.0.0
 urllib3==1.26.5
--e git+https://github.com/Ethanweiner20/web-visualizer.git@427c3f8e9ca0f251919b9ad470421cff33810a67#egg=web_visualizer
 webassets==2.0
 Werkzeug==2.0.1
 yarl==1.6.3
