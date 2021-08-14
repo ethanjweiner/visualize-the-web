@@ -40,11 +40,7 @@ toml==0.10.2
 tornado==6.1
 typing-extensions==3.10.0.0
 urllib3==1.26.5
-<<<<<<< HEAD
 -e git+https://github.com/Ethanweiner20/web-visualizer.git@427c3f8e9ca0f251919b9ad470421cff33810a67#egg=web_visualizer
-=======
--e git+https://github.com/Ethanweiner20/web-visualizer.git@5a969d34a99a2228e4c15eb5d43e272887ee7bda#egg=web_visualizer
->>>>>>> 106e33764b46d594814a31faf0fc97d33e333328
 webassets==2.0
 Werkzeug==2.0.1
 yarl==1.6.3
