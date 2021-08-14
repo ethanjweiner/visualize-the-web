@@ -4,7 +4,6 @@ venv/
 **/__pycache__/
 /web_visualizer/data/
 **/node_modules/
-# bundle.js
 *.code-workspace
 **/.webassets-cache/
 temporary.py
