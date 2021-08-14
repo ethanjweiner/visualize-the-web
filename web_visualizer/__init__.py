@@ -13,13 +13,6 @@ app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get(
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-# Optional Profiling
-
-# from werkzeug.middleware.profiler import ProfilerMiddleware
-# app.config['PROFILE'] = True
-# app.wsgi_app = ProfilerMiddleware(
-#     app.wsgi_app, restrictions=[10])
-
 import web_visualizer.py_main.route  # nopep8
 import web_visualizer.py_main.request  # nopep8
 import web_visualizer.py_main.routers  # nopep8
