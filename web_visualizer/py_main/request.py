@@ -2,6 +2,7 @@ from web_visualizer import app
 from web_visualizer.py_main.classes import *
 from web_visualizer.py_auxiliary.helpers import get_continent
 from web_visualizer.py_auxiliary.config import IP_INFO_ACCESS_TOKEN
+from web_visualizer.py_auxiliary.constants import *
 
 from flask import jsonify, request, session, abort
 
@@ -28,7 +29,7 @@ def http_request():
 
     if request_details["is_random"]:
         client_data["request_details"]["request_url"] = None
-        server_data = choose_random_destination(request_details["num_routers"])
+        server_data = choose_random_destination()
     else:
         server_data = simulate_http_request(
             client_data["request_details"]["request_url"], client_data["request_details"]["request_method"], client_data["request_details"]["request_content"])
@@ -68,11 +69,11 @@ def simulate_http_request(request_url, request_method, request_content=None):
     }
 
 
-# choose_random_destination
-# Chooses a random router to use as the deestination
-def choose_random_destination(num_routers):
-    first_id = Router.query.first().id
-    rand_id = random.randint(first_id, first_id + num_routers)
+# choose_random_destination : _ -> Dictionary
+# Chooses a random router from the selected routers to use as the destination
+def choose_random_destination():
+    seed = session["router_seed"]
+    rand_id = random.randint(seed, seed + session["num_routers"] - 1)
     router = Router.query.get(rand_id)
 
     return {

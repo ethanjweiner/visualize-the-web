@@ -5,6 +5,7 @@ import pycountry_convert as pc
 from functools import reduce
 from numpy.random import choice
 from flask import session
+from web_visualizer.py_auxiliary.constants import *
 
 
 # same_landmass: Point Point -> Boolean
@@ -137,3 +138,11 @@ def random_radius(distance):
     rand = rand if rand < 15 else 15
     rand = rand if rand > 2 else 2
     return rand
+
+
+# random_router_seed : Number -> Number
+# Retrieve a random router id that serves as a seed id for selecting all _num_routers_
+def random_router_seed(num_routers):
+    min = TOTAL_NUM_LANDING_POINTS + 1
+    max = min + TOTAL_NUM_ROUTERS - num_routers - 1
+    return random.randint(min, max)
