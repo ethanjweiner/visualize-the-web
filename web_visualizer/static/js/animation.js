@@ -84,16 +84,17 @@ class RouteAnimation {
   async animate_routes(direction) {
     return new Promise(resolve => {
       for (let i = 0; i < this.num_routes; i++) {
-        $.getJSON(
-          $SCRIPT_ROOT + "/route",
-          { direction },
-          (route) => {
+        $.ajax({
+          dataType: "json",
+          url: $SCRIPT_ROOT + "/route",
+          data: { direction },
+          success: (route) => {
             loadingSpinner.style.zIndex = 0;
             this.routes.push(route);
             if (i == 0)
               this.animate_route(0, direction, resolve);
           }
-        ).fail(handleError)
+        }).fail(handleError)
       }
     })
   }
