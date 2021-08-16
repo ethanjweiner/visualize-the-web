@@ -16,7 +16,18 @@ function handleError(data) {
   // Update alert content
   if (data.responseText) {
     alert.innerHTML = data.responseText;
-  } else {
+  } else if (data.client_side) {
+    alert.innerHTML = `
+      <div class="error-styling">
+      <h5>
+          <span id="error-name">${data.name}</span>       
+      </h5>
+
+      <p id="error-description">An error occurred. &nbsp;Please try refreshing.</p>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    `
+  } else if (data.code || data.name || data.description) {
     alert.innerHTML = `
       <div class="error-styling">
         <h5>
@@ -28,6 +39,8 @@ function handleError(data) {
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
       </div>
     `
+  } else {
+    alert.innerHTML = data;
   }
 }
 
@@ -166,8 +179,13 @@ function initListeners() {
       $SCRIPT_ROOT + "/request",
       { request_details: JSON.stringify(request_details) },
       function (data) {
-        loadingSpinner.style.zIndex = 0;
-        animate(data.client_data, data.server_data, map);
+        if (data.client_data) {
+          loadingSpinner.style.zIndex = 0;
+          animate(data.client_data, data.server_data, map);
+        } else {
+          handleError(data);
+        }
+
       }
     ).fail(handleError);
   });

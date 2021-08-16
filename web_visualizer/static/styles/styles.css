@@ -62,9 +62,12 @@ body {
   left: 310px;
   right: 10px;
   z-index: 1;
-  color: #a51c31 !important;
   margin-top: 10px;
   border: 2px dashed #a51c31 !important;
+}
+
+.error-styling {
+  color: #a51c31 !important;
 }
 
 #info-container {
@@ -180,3 +183,4 @@ label {
     font-size: 14px;
   } 
 }
+
