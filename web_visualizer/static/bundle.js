@@ -8,8 +8,8 @@ this.infoWindow=await init_info_window(destinationMarker);else
 this.infoWindow=await init_info_window(userMarker);this.update_info_window(direction,0);await this.animate_routes(direction);loadingSpinner.style.zIndex=0;clear_lines(this.blurred_lines);this.routes=[];this.blurred_lines=[];this.infoWindow.close()}
 clear_lines(this.blurred_lines);}
 update_info_window(direction,packet_number){if(animation_flag){const data={total_packets:this.num_routes,packets_received:packet_number,client_data:this.client_data,server_data:this.server_data};let content=info_window_content(direction,data);this.infoWindow.setContent(content);}}
-async animate_routes(direction){return new Promise(resolve=>{for(let i=0;i<this.num_routes;i++){$.ajax({dataType:"json",url:$SCRIPT_ROOT+"/route",data:{direction},success:(route)=>{loadingSpinner.style.zIndex=0;this.routes.push(route);if(i==0)
-this.animate_route(0,direction,resolve);}}).fail(handleError)}})}
+async animate_routes(direction,starting_index){if(!starting_index)starting_index=0;return new Promise(resolve=>{for(let i=starting_index;i<this.num_routes;i++){$.ajax({dataType:"json",url:$SCRIPT_ROOT+"/route",data:{direction},success:(route)=>{loadingSpinner.style.zIndex=0;this.routes.push(route);if(i==0)
+this.animate_route(0,direction,resolve);},error:(error)=>{console.log(error);setTimeout(()=>{this.animate_routes(direction,starting_index+1).then(resolve);},300);},timeout:5000});}})}
 async animate_route(route_index,direction,resolve){this.update_info_window(direction,route_index);if(route_index==this.num_routes)
 resolve();loadingSpinner.style.zIndex=0;while(route_index>=this.routes.length){await timeout(100);}
 loadingSpinner.style.zIndex=0;const route=this.routes[route_index];let lines=[];let blurred_lines=[];let color=random_color();const animate_connection=async(index)=>{const cable_path=(cable)=>{if(cable.nodes)
