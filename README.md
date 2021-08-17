@@ -1,4 +1,4 @@
-# YOUR PROJECT TITLE
+# VISUALIZE THE WEB
 #### Video Demo:  https://www.youtube.com/watch?v=ybKiQPi6t5Q
 #### Description:
 Visualize the Web is an app that roughly simulates the geographic transmission of data across the Internet. Specifically, it visualizes possible routes that packets might take during a web request. Packets are small units of data into which a request is broken into. These packets are sent along a cable-path connecting some series of routers and landing points. A landing point is a special type of router on the coast that is used to send data overseas, to other landing points! The routers and landing points displayed on the map actually indicate the location of real routers with real IP addresses, randomly imported from a global database of routers and landing points. Visualize the Web lets you create your own request to some domain. Feel free to experiment with request options such as the "number of routers" and "number of packets" to animate, and make sure to read the legend to understand the symbols on the map.
