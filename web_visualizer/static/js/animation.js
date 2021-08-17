@@ -81,9 +81,10 @@ class RouteAnimation {
   
   // animate_routes : Direction -> _
   // Initialize the animation of routes in _direction_
-  async animate_routes(direction) {
+  async animate_routes(direction, starting_index) {
+    if (!starting_index) starting_index = 0;
     return new Promise(resolve => {
-      for (let i = 0; i < this.num_routes; i++) {
+      for (let i = starting_index; i < this.num_routes; i++) {
         $.ajax({
           dataType: "json",
           url: $SCRIPT_ROOT + "/route",
@@ -93,8 +94,15 @@ class RouteAnimation {
             this.routes.push(route);
             if (i == 0)
               this.animate_route(0, direction, resolve);
-          }
-        }).fail(handleError)
+          },
+          error: (error) => {
+            console.log(error);
+            setTimeout(() => {
+              this.animate_routes(direction, starting_index + 1).then(resolve);
+            }, 300);
+          },
+          timeout: 5000
+        });
       }
     })
   }
