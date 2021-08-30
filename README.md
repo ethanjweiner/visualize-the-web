@@ -45,16 +45,19 @@ It is important to note that Visualize the Web is not a precise or accurate simu
 1. **Object-oriented approach**: While the app as a whole combines object-oriented and functional programming principles, I decided to take a more object-oriented approach for the meat of this application. The points, cables, and pathways are all represented by objects. This made complete sense since I was using Flask-SQLAlchemy, an object-relation-mapper database whose goal is to represent database rows with objects (models) in Python code. Since the routing algorithms have a very recursive, self-referential nature, I defined the routing algorithms themselves as part of these models. 
 
 2. **Greedy BFS**: The biggest problem (by far) that this project needed to solve was determining how to create a path from a large set of unconnected points. I had to consider questions such as:
-- How will routing overseas take place?
-- How will I create realistic paths?
-- How can I make sure that all packets don't take the same path? How do I add randomness to the algorithm?
-- How much randomness can I add without sacrificing efficiency?
-- How will I ensure that the algorithm isn't awfully slow?
-- How can I prevent infinite recursion and circular cases?
+  - How will routing overseas take place?
+  - How will I create realistic paths?
+  - How can I make sure that all packets don't take the same path? How do I add randomness to the algorithm?
+  - How much randomness can I add without sacrificing efficiency?
+  - How will I ensure that the algorithm isn't awfully slow?
+  - How can I prevent infinite recursion and circular cases?
+
 Each of these questions involved numerous design choices within themselves, but I'll focus on the more overaching design choice that helped provide a framework for answering all of these questions: my decision to use a greedy best-first-search inspired algorithm, while adding randomness. Greedy best first search uses a heuristic to recursively guide an algorithm to its destination. I knew that just randomly searching pathways would not cut it here, since there are so many possible pathways the packet could take, and testing all of them would be awfully slow. In fact, there is no real way to randomly test pathways, since my data representation of the routers did not include any connections between them (in real life, routers are connected, but in my program, they existed more as a sort of "unconnected graph"). So, I need some way to guide the algorithm, and I settled on three "heuristics" that greatly limit the number of options that the algorithm can choose from.
-1. The next point selected must be within a reasonable distance of the current point. The "neighbors" function filters the sample of routers that can be selected.
-2. Points that progress the algorithm closer to the destination are prioritized. I calculate this heuristic in a complex fashion, by creating a weighted random sample out of nearby points, in which routers closer to the destination are assigned a greater weight.
-3. If the routing algorithm encounters a landing point, it has the option to discard the previous two heuristics and send the packet overseas along the landing point's defined cable. It chooses to send the packet overseas only if it will send it to a continent not yet visited along the pathway.
+ 
+  1. The next point selected must be within a reasonable distance of the current point. The "neighbors" function filters the sample of routers that can be selected.
+  2. Points that progress the algorithm closer to the destination are prioritized. I calculate this heuristic in a complex fashion, by creating a weighted random sample out of nearby points, in which routers closer to the destination are assigned a greater weight.
+  3. If the routing algorithm encounters a landing point, it has the option to discard the previous two heuristics and send the packet overseas along the landing point's defined cable. It chooses to send the packet overseas only if it will send it to a continent not yet visited along the pathway.
+
 At the same time, these heuristics only serve as loose guides. I wanted to maintain a degree of randomness in the algorithm along with the heuristics. Because of this, the algorithm is not a true greedy-best-first-search algorithm. Finding a balance between randomness and the "greediness" of greedy-BFS took a substantial amount of time, energy, tweaking, and profiling.
 
 3. **Accumulators**: Accumulators, in particular, the "path" parameter that accumulates as the path is generated, were a huge help. They allowed me to monitor the state of the path as the algorithm progressed, and direct the algorithm based on certain conditions in the path.
