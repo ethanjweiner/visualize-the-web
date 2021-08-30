@@ -1,6 +1,5 @@
 from web_visualizer import app, db
 from web_visualizer.py_main.classes import Router, LandingPoint, Point, Path
-from web_visualizer.py_auxiliary.database import Database
 from web_visualizer.py_auxiliary.helpers import *
 from web_visualizer.py_auxiliary.constants import *
 
