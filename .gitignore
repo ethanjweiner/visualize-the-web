@@ -14,4 +14,4 @@ dist/
 build/
 *.egg-info/
 icon.png
-# config.py
+config.py
