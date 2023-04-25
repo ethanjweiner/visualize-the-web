@@ -1,8 +1,8 @@
-# VISUALIZE THE WEB
-#### Video Demo:  https://www.youtube.com/watch?v=ybKiQPi6t5Q
-#### Description:
-Visualize the Web is an app that roughly simulates the geographic transmission of data across the Internet. Specifically, it visualizes possible routes that packets might take during a web request. Packets are small units of data into which a request is broken into. These packets are sent along a cable-path connecting some series of routers and landing points. A landing point is a special type of router on the coast that is used to send data overseas, to other landing points! The routers and landing points displayed on the map actually indicate the location of real routers with real IP addresses, randomly imported from a global database of routers and landing points. Visualize the Web lets you create your own request to some domain. Feel free to experiment with request options such as the "number of routers" and "number of packets" to animate, and make sure to read the legend to understand the symbols on the map.
+# Visualize the Web
 
+#### Video Demo:  
+
+**Visualize the Web** is an app that roughly simulates the geographic transmission of data across the Internet. Specifically, it visualizes possible routes that packets might take during a web request. Packets are small units of data into which a request is broken into. These packets are sent along a cable-path connecting some series of routers and landing points. A landing point is a special type of router on the coast that is used to send data overseas, to other landing points! The routers and landing points displayed on the map actually indicate the location of real routers with real IP addresses, randomly imported from a global database of routers and landing points. Visualize the Web lets you create your own request to some domain. Feel free to experiment with request options such as the "number of routers" and "number of packets" to animate, and make sure to read the legend to understand the symbols on the map. Watch the [video demo](https://www.youtube.com/watch?v=ybKiQPi6t5Qmore) for more information.
 
 Visualize the Web intends to show:
 
@@ -21,7 +21,7 @@ It is important to note that Visualize the Web is not a precise or accurate simu
 - The algorithm that Visualize the Web uses to route packets differs immensely from, and is much more simplistic than, the IP-based algorithm that real-world routers to route packets. - The routes that packets would actually take would be quite different.
 - The transmission of data across the Internet occurs much faster than in Visualize the Web's simulation.
 
-#### File Explanations:
+#### File Explanations
 
 - *__init__.py* and *setup.py* initialize and configures the application and database on the server. It specifies the main route and uses a Javascript bundler to package all javascript into a singular "bundle.js" file. Setup.py specifies the required packages used in the application.
 - *data/points.db* is the home of the SQLite3 database, storing "points" (routers and landing points) in one table and "paths" (two-way paths between continents that I generated) in another. I use an object-relation-mapper to provide class definitions in Python code that map directly to these two tables. Routers and landing points inherit the points class, and so in the points.db they are both represented as points, but with a few differing properties. Points.db contains thousands of routers that are based on the location of real ip addresses. These real ip addresses were retrieved from an outside geolocation database at "https://db-ip.com". The landing points, and associated cables, were retrieved from a separate geolocation database at "https://submarine-cable-map-2021.telegeography.com/". 
@@ -65,7 +65,7 @@ At the same time, these heuristics only serve as loose guides. I wanted to maint
 4. **Maximum Cases**: Because of the breadth of points that the routing algorithms have to deal with, efficiency was a major consideration here. I was able to quicken the functions considerably by tweaking the algorithms and using a profile to track down what functions were taking the most time to execute. Nevertheless, I still came into hiccups with the algorithm. So, to prevent the algorithm from getting stuck, it not only deals with circular cases, but defines "maximum cases" that reinitialize the routing process if certain conditions are met. The two maximum cases are time-based (reroute if the current path is taking too much time) and length-based (reroute if the accumulated path is too long).
 
 
-#### Takeaways:
+#### Takeaways
 
 - **Benefits of unit testing**: I took some time to learn the basics of a Python testing library in order to test parts of my program. I certainly didn't test everything, because my program involves a lot of randomness (and testing unpredictable states is difficult), but testing certainly helped where it could.
 - **Importance of diagraming**: Diagraming was the only way I could really visualize and understand the complex algorithms I was implementing.
@@ -76,5 +76,5 @@ At the same time, these heuristics only serve as loose guides. I wanted to maint
 - **Importance of proper workspace setup**: I have never used Flask before, so properly setting up the project with packages, dependencies, configuration files, a virtual environment, and a testing library was a bit difficult for me, and I ran into many bumps because of it. Flask in particular is a very lightweight and customizable framework, so I had little guidance on the best way to organize my application. In the future, when learning a new framework, I will take more time to understand recommended file structure patterns and configurations.
 - **Start simple**: The inital approach I took to this application was to develop it all at once, but I wish I had developed my program in multiple "drafts" (AKA versions), starting with a simpler interface and algorithms, and slowly adding complexity and randomness. This would have helped me avoid getting stuck countless times and running into countless regressions.
 - **Using a debugger**: The debugger was my best friend. I didn't really use any integrated debugging tool when working on projects in the past, but developing this application without a debugger would have been painful.
-- **Profling**: A profiler was my other best friend. It helped me track down what functions were eating up most of the time in my code, so that I had an idea of where efficiency improvements were needed.
+- **Profiling**: A profiler was my other best friend. It helped me track down what functions were eating up most of the time in my code, so that I had an idea of where efficiency improvements were needed.
 - **Be willing to use other people's code**: I found myself trying to reinvent the wheel multiple times in this application before using third-party packages and libraries. My philosophy was that I would try to do it myself first, and then get help if I needed it. While this is a helpful mindset for learning purposes, with such a large application, I would've been better off usng libraries first, and then trying to create my own implementations afterward, if I so desired. A great example of this was trying to implement a weighted-random-sampling function -- plenty of libraries exist that do this, but at first, I tried to create it myself.
